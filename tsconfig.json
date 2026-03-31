@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": false,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      "src/*": ["./src/*"],
+      "bun:bundle": ["./src/types/bun-bundle.d.ts"],
+      "@ant/*": ["./stubs/@ant/*"],
+      "@anthropic-ai/mcpb": ["./stubs/@anthropic-ai/mcpb/index.ts"],
+      "@anthropic-ai/sandbox-runtime": ["./stubs/@anthropic-ai/sandbox-runtime/index.ts"],
+      "@anthropic-ai/claude-agent-sdk": ["./stubs/@anthropic-ai/claude-agent-sdk/index.ts"],
+      "color-diff-napi": ["./stubs/color-diff-napi/index.ts"],
+      "audio-capture-napi": ["./stubs/audio-capture-napi/index.ts"],
+      "modifiers-napi": ["./stubs/modifiers-napi/index.ts"]
+    },
+    "types": ["bun-types", "@types/node", "@types/react"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "stubs/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}
