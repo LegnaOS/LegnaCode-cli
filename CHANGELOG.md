@@ -2,6 +2,26 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
+## [1.0.4] - 2026-04-02
+
+### New Features
+
+- **ULTRAPLAN** — `/ultraplan` 结构化多步骤规划命令
+- **VERIFICATION_AGENT** — 批量任务完成后自动派生验证 Agent
+- **AUTO_THEME** — 通过 OSC 11 查询终端背景色自动切换深色/浅色主题
+- **AGENT_MEMORY_SNAPSHOT** — Agent 记忆快照
+- **FILE_PERSISTENCE** — 文件持久化追踪
+- **POWERSHELL_AUTO_MODE** — PowerShell 自动模式
+- **HARD_FAIL** — 严格错误模式
+- **SLOW_OPERATION_LOGGING** — 慢操作日志
+- **UNATTENDED_RETRY** — 无人值守重试
+- **ALLOW_TEST_VERSIONS** — 允许测试版本
+
+### Infrastructure
+
+- 新增 `src/utils/systemThemeWatcher.ts` — OSC 11 终端主题检测与实时监听
+- 累计已开启 33/87 个 feature flags
+
 ## [1.0.3] - 2026-04-02
 
 ### New Features
