@@ -12,6 +12,38 @@ export function isReactiveOnlyMode(): boolean {
   return false
 }
 
+export function isReactiveCompactEnabled(): boolean {
+  return true
+}
+
+/** Check if an API error message indicates prompt-too-long (413). */
+export function isWithheldPromptTooLong(message: unknown): boolean {
+  if (!message || typeof message !== 'object') return false
+  const msg = message as Record<string, unknown>
+  // Match 413 / prompt_too_long / overloaded error shapes
+  if (msg.type === 'error' || msg.error) {
+    const err = (msg.error ?? msg) as Record<string, unknown>
+    const status = err.status ?? err.statusCode
+    if (status === 413) return true
+    const errType = typeof err.type === 'string' ? err.type : ''
+    if (errType === 'prompt_too_long' || errType === 'request_too_large') return true
+  }
+  return false
+}
+
+/** Check if an API error indicates media/content size exceeded. */
+export function isWithheldMediaSizeError(message: unknown): boolean {
+  if (!message || typeof message !== 'object') return false
+  const msg = message as Record<string, unknown>
+  if (msg.type === 'error' || msg.error) {
+    const err = (msg.error ?? msg) as Record<string, unknown>
+    const errMsg = typeof err.message === 'string' ? err.message : ''
+    if (errMsg.includes('media') && errMsg.includes('size')) return true
+    if (errMsg.includes('image') && errMsg.includes('too large')) return true
+  }
+  return false
+}
+
 export async function tryReactiveCompact(opts: {
   hasAttempted: boolean
   querySource: string
