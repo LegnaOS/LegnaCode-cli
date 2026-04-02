@@ -2,6 +2,31 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
+## [1.0.3] - 2026-04-02
+
+### New Features
+
+- **COMMIT_ATTRIBUTION** — 追踪每次 commit 中 Claude 的贡献比例，PR 描述自动附加归因 trailer
+- **AWAY_SUMMARY** — 用户离开后返回时显示期间发生的摘要
+- **COMPACTION_REMINDERS** — 上下文压缩时的效率提醒
+- **HOOK_PROMPTS** — 允许 hooks 向用户请求输入
+- **BASH_CLASSIFIER** — Shell 命令安全分类器
+- **EXTRACT_MEMORIES** — 自动从对话中提取持久化记忆
+- **SHOT_STATS** — 会话统计面板
+- **PROMPT_CACHE_BREAK_DETECTION** — 检测 prompt cache 失效
+- **ULTRATHINK** — 深度思考模式
+- **MCP_RICH_OUTPUT** — MCP 工具富文本输出
+- **CONNECTOR_TEXT** — 连接器文本增强
+- **NATIVE_CLIPBOARD_IMAGE** — 原生剪贴板图片支持
+- **NEW_INIT** — 改进的项目初始化流程
+- **DUMP_SYSTEM_PROMPT** — 调试用 system prompt 导出
+- **BREAK_CACHE_COMMAND** — `/break-cache` 命令
+- **BUILTIN_EXPLORE_PLAN_AGENTS** — 内置 Explore/Plan Agent
+
+### Infrastructure
+
+- 新增 `src/utils/attributionHooks.ts`、`attributionTrailer.ts`、`postCommitAttribution.ts` 三个归因模块
+
 ## [1.0.2] - 2026-04-02
 
 ### New Features
