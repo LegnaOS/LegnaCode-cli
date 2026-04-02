@@ -12,7 +12,7 @@ import { isFullscreenActive } from '../utils/fullscreen.js';
 import type { Theme } from '../utils/theme.js';
 import { getCompanion } from './companion.js';
 import { renderFace, renderSprite, spriteFrameCount } from './sprites.js';
-import { RARITY_COLORS } from './types.js';
+import { RARITY_COLORS, RARITY_STARS } from './types.js';
 const TICK_MS = 500;
 const BUBBLE_SHOW = 20; // ticks → ~10s at 500ms
 const FADE_WINDOW = 6; // last ~3s the bubble dims so you know it's about to go
@@ -270,6 +270,7 @@ export function CompanionSprite(): React.ReactNode {
       <Text italic bold={focused} dimColor={!focused} color={focused ? color : undefined} inverse={focused}>
         {focused ? ` ${companion.name} ` : companion.name}
       </Text>
+      <Text dimColor={!focused} color={color}>{RARITY_STARS[companion.rarity]}</Text>
     </Box>;
   if (!reaction) {
     return <Box paddingX={1}>{spriteColumn}</Box>;

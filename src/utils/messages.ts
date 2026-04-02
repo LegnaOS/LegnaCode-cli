@@ -2758,8 +2758,10 @@ export function isEmptyMessageText(text: string): boolean {
 const STRIPPED_TAGS_RE =
   /<(commit_analysis|context|function_analysis|pr_analysis)>.*?<\/\1>\n?/gs
 
+const BUDDY_TAGS_RE = /\[BUDDY(?:_RENAME)?:\s*.+?\]/gi
+
 export function stripPromptXMLTags(content: string): string {
-  return content.replace(STRIPPED_TAGS_RE, '').trim()
+  return content.replace(STRIPPED_TAGS_RE, '').replace(BUDDY_TAGS_RE, '').trim()
 }
 
 export function getToolUseID(message: NormalizedMessage): string | null {

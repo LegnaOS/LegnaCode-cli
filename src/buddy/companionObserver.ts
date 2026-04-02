@@ -1,10 +1,15 @@
 import type { Message } from '../types/message.js'
 import { getCompanion } from './companion.js'
-import { getGlobalConfig } from '../utils/config.js'
+import { getGlobalConfig, saveGlobalConfig } from '../utils/config.js'
 import { getContentText } from '../utils/messages.js'
 
-// Context-aware quip pools. The observer picks a pool based on the last
-// assistant message content, then draws a random quip from it.
+// Regex to extract [BUDDY: ...] tag from Claude's response.
+const BUDDY_TAG_RE = /\[BUDDY:\s*(.+?)\]/i
+
+// Regex to extract [BUDDY_RENAME: ...] tag for renaming.
+const BUDDY_RENAME_RE = /\[BUDDY_RENAME:\s*(.+?)\]/i
+
+// Fallback quip pools for when Claude doesn't include a [BUDDY: ...] tag.
 const QUIPS_CODE = [
   '代码写得不错嘛～ (ᵔᴥᵔ)',
   '又写了好多代码！辛苦啦～',
@@ -49,8 +54,8 @@ const QUIPS_LONG = [
   '这么多内容，辛苦你啦！',
 ]
 
-// Fire rate: ~30% chance per turn to avoid being annoying.
-const FIRE_RATE = 0.3
+// Fallback fire rate when Claude doesn't include a [BUDDY: ...] tag.
+const FALLBACK_FIRE_RATE = 0.3
 
 function pickPool(lastText: string): string[] {
   const t = lastText.toLowerCase()
@@ -65,6 +70,39 @@ function pickPool(lastText: string): string[] {
   return QUIPS_IDLE
 }
 
+/**
+ * Extract a [BUDDY: ...] tag from text. Returns the inner message or null.
+ */
+export function extractBuddyTag(text: string): string | null {
+  const match = BUDDY_TAG_RE.exec(text)
+  return match ? match[1]!.trim() : null
+}
+
+/**
+ * Extract a [BUDDY_RENAME: ...] tag and apply the rename if found.
+ */
+function applyBuddyRename(text: string): void {
+  const match = BUDDY_RENAME_RE.exec(text)
+  if (!match) return
+  const newName = match[1]!.trim()
+  if (!newName || newName.length > 20) return
+  saveGlobalConfig(config => {
+    if (!config.companionSoul) return config
+    return {
+      ...config,
+      companionSoul: { ...config.companionSoul, name: newName },
+    }
+  })
+}
+
+/**
+ * Strip [BUDDY: ...] and [BUDDY_RENAME: ...] tags from text so they don't
+ * appear in the visible response. Called by the message rendering pipeline.
+ */
+export function stripBuddyTags(text: string): string {
+  return text.replace(BUDDY_TAG_RE, '').replace(BUDDY_RENAME_RE, '').trim()
+}
+
 export async function fireCompanionObserver(
   messages: Message[],
   onReaction: (reaction: string) => void,
@@ -72,17 +110,29 @@ export async function fireCompanionObserver(
   const companion = getCompanion()
   if (!companion || getGlobalConfig().companionMuted) return
   if (messages.length < 2) return
-  if (Math.random() > FIRE_RATE) return
 
-  // Find the last assistant message to pick a context-aware quip pool
+  // Find the last assistant message
   let lastText = ''
   for (let i = messages.length - 1; i >= 0; i--) {
     const msg = messages[i]!
     if (msg.type === 'assistant') {
-      lastText = getContentText(msg.message.content)
+      lastText = getContentText(msg.message.content) ?? ''
       break
     }
   }
+
+  // Handle rename if Claude included [BUDDY_RENAME: newName]
+  applyBuddyRename(lastText)
+
+  // Priority 1: Extract [BUDDY: ...] tag from Claude's response.
+  const buddyLine = extractBuddyTag(lastText)
+  if (buddyLine) {
+    onReaction(buddyLine)
+    return
+  }
+
+  // Priority 2: Fallback random quip with 30% fire rate.
+  if (Math.random() > FALLBACK_FIRE_RATE) return
 
   const pool = pickPool(lastText)
   const quip = pool[Math.floor(Math.random() * pool.length)]!
