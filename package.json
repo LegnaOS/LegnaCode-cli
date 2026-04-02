@@ -1,6 +1,6 @@
 {
   "name": "@legna-lnc/legnacode",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "LegnaCode — legna.lnc's official CLI for coding assistance",
   "type": "module",
   "main": "dist/main.js",
