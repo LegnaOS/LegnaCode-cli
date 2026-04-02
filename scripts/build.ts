@@ -22,28 +22,46 @@ const enabledFeatures = new Set(
     : [],
 )
 
-// Read bunfig.toml to extract MACRO defines
-function parseBunfigDefines(): Record<string, string> {
+// Read bunfig.toml to extract MACRO defines and feature flags
+function parseBunfig(): {
+  defines: Record<string, string>
+  features: string[]
+} {
   const content = readFileSync(resolve(ROOT, 'bunfig.toml'), 'utf-8')
   const defines: Record<string, string> = {}
-  let inDefine = false
+  const features: string[] = []
+  let section: 'define' | 'features' | null = null
   for (const line of content.split('\n')) {
-    if (line.trim() === '[bundle.define]') {
-      inDefine = true
+    const trimmed = line.trim()
+    if (trimmed === '[bundle.define]') {
+      section = 'define'
       continue
     }
-    if (line.trim().startsWith('[') && inDefine) break
-    if (inDefine && line.includes('=')) {
-      const [key, ...rest] = line.split('=')
-      const k = key!.trim().replace(/"/g, '')
-      const v = rest.join('=').trim()
+    if (trimmed === '[bundle.features]') {
+      section = 'features'
+      continue
+    }
+    if (trimmed.startsWith('[')) {
+      section = null
+      continue
+    }
+    if (!line.includes('=')) continue
+    const [key, ...rest] = line.split('=')
+    const k = key!.trim().replace(/"/g, '')
+    const v = rest.join('=').trim()
+    if (section === 'define') {
       defines[k] = v
+    } else if (section === 'features') {
+      // Include flag if enabled in bunfig.toml or via CLI --features override
+      if (v === 'true' || enabledFeatures.has(k)) {
+        features.push(k)
+      }
     }
   }
-  return defines
+  return { defines, features }
 }
 
-const defines = parseBunfigDefines()
+const { defines, features } = parseBunfig()
 
 const result = await Bun.build({
   entrypoints: [resolve(ROOT, 'src/entrypoints/cli.tsx')],
@@ -53,6 +71,7 @@ const result = await Bun.build({
   splitting: true,
   sourcemap: 'external',
   define: defines,
+  features,
   external: [
     // Anthropic internal packages (not available on npm)
     '@ant/claude-for-chrome-mcp',
