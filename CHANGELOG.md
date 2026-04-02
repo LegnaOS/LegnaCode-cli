@@ -2,6 +2,36 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
+## [1.0.8] - 2026-04-02
+
+### New Features
+
+- **MONITOR_TOOL** — MCP 服务器健康监控工具，支持 start/stop/status 操作，后台定期 ping 检测连接状态
+- **WORKFLOW_SCRIPTS** — 工作流自动化系统，读取 `.claude/workflows/*.md` 执行多步骤工作流，`/workflows` 命令列出可用工作流
+- **HISTORY_SNIP** — 会话历史裁剪，模型可主动调用 SnipTool 移除旧消息释放上下文，`/force-snip` 强制裁剪，UI 保留完整历史而模型视图过滤
+
+### Infrastructure
+
+- 新增 `src/tools/MonitorTool/MonitorTool.ts` — MCP 监控工具（buildTool 构建）
+- 新增 `src/tasks/MonitorMcpTask/MonitorMcpTask.ts` — 监控后台任务生命周期管理
+- 新增 `src/components/permissions/MonitorPermissionRequest/` — 监控权限 UI
+- 新增 `src/components/tasks/MonitorMcpDetailDialog.tsx` — 监控任务详情对话框
+- 新增 `src/tools/WorkflowTool/WorkflowTool.ts` — 工作流执行工具
+- 新增 `src/tools/WorkflowTool/createWorkflowCommand.ts` — 工作流命令扫描与注册
+- 新增 `src/tools/WorkflowTool/bundled/index.ts` — 内置工作流注册入口
+- 新增 `src/tools/WorkflowTool/WorkflowPermissionRequest.tsx` — 工作流权限 UI
+- 新增 `src/commands/workflows/` — `/workflows` 斜杠命令
+- 新增 `src/tasks/LocalWorkflowTask/LocalWorkflowTask.ts` — 工作流后台任务（kill/skip/retry）
+- 新增 `src/components/tasks/WorkflowDetailDialog.tsx` — 工作流详情对话框
+- 新增 `src/services/compact/snipCompact.ts` — 裁剪触发逻辑（重写 stub）
+- 新增 `src/services/compact/snipProjection.ts` — 模型视图消息过滤
+- 新增 `src/tools/SnipTool/SnipTool.ts` — 模型调用的裁剪工具
+- 新增 `src/tools/SnipTool/prompt.ts` — SnipTool 常量与 prompt
+- 新增 `src/commands/force-snip.ts` — `/force-snip` 斜杠命令
+- 新增 `src/components/messages/SnipBoundaryMessage.tsx` — 裁剪边界 UI 组件
+- 3 个 feature flags 翻转：MONITOR_TOOL、WORKFLOW_SCRIPTS、HISTORY_SNIP
+- 累计已开启 47/87 个 feature flags
+
 ## [1.0.7] - 2026-04-02
 
 ### New Features
