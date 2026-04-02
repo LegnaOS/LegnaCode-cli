@@ -87,10 +87,10 @@ function applyBuddyRename(text: string): void {
   const newName = match[1]!.trim()
   if (!newName || newName.length > 20) return
   saveGlobalConfig(config => {
-    if (!config.companionSoul) return config
+    if (!config.companion) return config
     return {
       ...config,
-      companionSoul: { ...config.companionSoul, name: newName },
+      companion: { ...config.companion, name: newName },
     }
   })
 }
