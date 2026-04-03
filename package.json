@@ -1,6 +1,6 @@
 {
   "name": "@legna-lnc/legnacode",
-  "version": "1.1.8",
+  "version": "1.1.9",
   "description": "LegnaCode — legna.lnc's official CLI for coding assistance",
   "type": "module",
   "bin": {
@@ -26,6 +26,7 @@
     "anthropic"
   ],
   "scripts": {
+    "postinstall": "node npm/postinstall.cjs",
     "build": "bun run scripts/build.ts && python3 scripts/postbuild-fix.py",
     "compile": "bun run scripts/compile.ts",
     "compile:all": "bun run scripts/compile-all.ts",
@@ -141,10 +142,10 @@
     "bun": ">=1.2.0"
   },
   "optionalDependencies": {
-    "@legna-lnc/legnacode-darwin-arm64": "1.1.8",
-    "@legna-lnc/legnacode-darwin-x64": "1.1.8",
-    "@legna-lnc/legnacode-linux-x64": "1.1.8",
-    "@legna-lnc/legnacode-linux-arm64": "1.1.8",
-    "@legna-lnc/legnacode-win32-x64": "1.1.8"
+    "@legna-lnc/legnacode-darwin-arm64": "1.1.9",
+    "@legna-lnc/legnacode-darwin-x64": "1.1.9",
+    "@legna-lnc/legnacode-linux-x64": "1.1.9",
+    "@legna-lnc/legnacode-linux-arm64": "1.1.9",
+    "@legna-lnc/legnacode-win32-x64": "1.1.9"
   }
 }

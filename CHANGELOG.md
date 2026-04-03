@@ -2,6 +2,14 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
+## [1.1.9] - 2026-04-03
+
+### Fixed
+
+- **postinstall 自动安装平台包** — 新增 `npm/postinstall.cjs`，`npm install` 阶段自动检测并从官方 registry 安装对应平台二进制包，彻底解决 Windows/镜像源下 optionalDependencies 不生效的问题
+- **强制官方 registry** — postinstall 使用 `--registry https://registry.npmjs.org` 避免淘宝镜像等未同步导致 404
+- **bin wrapper 精简** — 移除运行时 auto-install 逻辑，改由 postinstall 保证
+
 ## [1.1.8] - 2026-04-03
 
 ### Fixed
