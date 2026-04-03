@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import type { Scope, Session } from '../api/client'
 import { getSessions } from '../api/client'
 
@@ -21,6 +21,17 @@ export function SessionsPanel({ scope }: Props) {
     })
   }
 
+  // Group sessions by project
+  const grouped = useMemo(() => {
+    const map = new Map<string, Session[]>()
+    for (const s of sessions) {
+      const key = s.projectPath || s.cwd || s.project || 'unknown'
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(s)
+    }
+    return Array.from(map.entries())
+  }, [sessions])
+
   if (loading) return <div className="text-gray-500 text-sm">加载中...</div>
 
   if (sessions.length === 0) {
@@ -28,25 +39,33 @@ export function SessionsPanel({ scope }: Props) {
   }
 
   return (
-    <div className="space-y-2">
-      <h2 className="text-sm font-medium text-gray-300 mb-3">会话记录 ({sessions.length})</h2>
-      <div className="space-y-2 max-h-[600px] overflow-y-auto">
-        {sessions.map(s => (
-          <div key={s.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-700 bg-gray-800/50">
-            <div className="min-w-0 flex-1">
-              <div className="text-sm text-gray-200 truncate">{s.cwd || s.project || '未知项目'}</div>
-              <div className="text-xs text-gray-500 mt-0.5">
-                {s.slug && <span className="mr-3 text-gray-400">{s.slug}</span>}
-                {s.timestamp && <span className="mr-3">{new Date(s.timestamp).toLocaleString()}</span>}
-                <span>{s.promptCount} prompts</span>
-              </div>
+    <div className="space-y-4">
+      <h2 className="text-sm font-medium text-gray-300">
+        会话记录 ({sessions.length}) · {grouped.length} 个项目
+      </h2>
+      <div className="space-y-4 max-h-[600px] overflow-y-auto">
+        {grouped.map(([project, items]) => (
+          <div key={project}>
+            <div className="text-xs text-blue-400 mb-1.5 truncate">{project}</div>
+            <div className="space-y-1.5">
+              {items.map(s => (
+                <div key={s.id} className="flex items-center justify-between p-2.5 rounded-lg border border-gray-700 bg-gray-800/50">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs text-gray-500">
+                      {s.slug && <span className="mr-2 text-gray-400">{s.slug}</span>}
+                      {s.timestamp && <span className="mr-2">{new Date(s.timestamp).toLocaleString()}</span>}
+                      <span>{s.promptCount} prompts</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => copyCmd(s.resumeCommand, s.id)}
+                    className="ml-3 px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors shrink-0"
+                  >
+                    {copied === s.id ? '已复制' : '复制 resume'}
+                  </button>
+                </div>
+              ))}
             </div>
-            <button
-              onClick={() => copyCmd(s.resumeCommand, s.id)}
-              className="ml-3 px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors shrink-0"
-            >
-              {copied === s.id ? '已复制' : '复制 resume'}
-            </button>
           </div>
         ))}
       </div>

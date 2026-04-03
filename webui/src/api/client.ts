@@ -46,6 +46,7 @@ export function switchProfile(scope: Scope, filename: string) {
 export interface Session {
   id: string
   project: string
+  projectPath: string
   cwd: string
   slug: string
   timestamp: string
@@ -65,6 +66,7 @@ export interface MigrateRequest {
   from: Scope
   to: Scope
   fields?: string[]
+  includeSessions?: boolean
 }
 
 export function migrate(data: MigrateRequest) {

@@ -145,7 +145,6 @@ function handleSessions(dir: string, scope: Scope, limit: number): Response {
     const projects = readdirSync(historyPath)
     for (const proj of projects) {
       const projDir = join(historyPath, proj)
-      // Each session is a <uuid>.jsonl file inside the project directory
       let files: string[]
       try { files = readdirSync(projDir).filter(f => f.endsWith('.jsonl')) } catch { continue }
       for (const file of files) {
@@ -170,14 +169,16 @@ function handleSessions(dir: string, scope: Scope, limit: number): Response {
             } catch {}
           }
           if (!timestamp) continue
+          const projectPath = cwd || proj.replace(/-/g, '/')
           sessions.push({
             id: sessionId,
-            project: proj.replace(/-/g, '/'),
+            project: proj,
+            projectPath,
             cwd,
             slug,
             timestamp,
             promptCount,
-            resumeCommand: `legna --resume ${sessionId}`,
+            resumeCommand: buildResumeCommand(projectPath, sessionId),
           })
         } catch {}
       }
@@ -187,28 +188,68 @@ function handleSessions(dir: string, scope: Scope, limit: number): Response {
   return json(sessions.slice(0, limit))
 }
 
+function buildResumeCommand(cwd: string, sessionId: string): string {
+  // Windows: cd /d "path" && legna --resume id
+  // Unix: cd "path" && legna --resume id
+  const isWin = process.platform === 'win32'
+  const cd = isWin ? `cd /d "${cwd}"` : `cd "${cwd}"`
+  return `${cd} && legna --resume ${sessionId}`
+}
+
 function handleMigrate(body: any): Response {
-  const { from, to, fields } = body as { from: Scope; to: Scope; fields?: string[] }
+  const { from, to, fields } = body as { from: Scope; to: Scope; fields?: string[]; includeSessions?: boolean }
   if (!from || !to) return err('Missing from/to')
-  const srcFile = join(scopeDir(from), 'settings.json')
-  const dstFile = join(scopeDir(to), 'settings.json')
+  const srcDir = scopeDir(from)
+  const dstDir = scopeDir(to)
+  const srcFile = join(srcDir, 'settings.json')
+  const dstFile = join(dstDir, 'settings.json')
+  const migrated: string[] = []
   try {
-    const srcData = JSON.parse(readFileSync(srcFile, 'utf-8'))
-    mkdirSync(scopeDir(to), { recursive: true })
-    if (!fields || fields.length === 0) {
-      writeFileSync(dstFile, JSON.stringify(srcData, null, 2) + '\n')
-      return json({ ok: true, migrated: Object.keys(srcData) })
+    mkdirSync(dstDir, { recursive: true })
+
+    // Migrate settings
+    if (existsSync(srcFile)) {
+      const srcData = JSON.parse(readFileSync(srcFile, 'utf-8'))
+      if (!fields || fields.length === 0) {
+        writeFileSync(dstFile, JSON.stringify(srcData, null, 2) + '\n')
+        migrated.push(...Object.keys(srcData))
+      } else {
+        let dstData: Record<string, any> = {}
+        try { dstData = JSON.parse(readFileSync(dstFile, 'utf-8')) } catch {}
+        for (const f of fields) {
+          if (f in srcData) { dstData[f] = srcData[f]; migrated.push(f) }
+        }
+        writeFileSync(dstFile, JSON.stringify(dstData, null, 2) + '\n')
+      }
     }
-    let dstData: Record<string, any> = {}
-    try { dstData = JSON.parse(readFileSync(dstFile, 'utf-8')) } catch {}
-    const migrated: string[] = []
-    for (const f of fields) {
-      if (f in srcData) { dstData[f] = srcData[f]; migrated.push(f) }
+
+    // Migrate sessions (projects/ directory)
+    if (body.includeSessions) {
+      const srcProjects = join(srcDir, 'projects')
+      const dstProjects = join(dstDir, 'projects')
+      if (existsSync(srcProjects)) {
+        copyDirRecursive(srcProjects, dstProjects)
+        migrated.push('sessions')
+      }
     }
-    writeFileSync(dstFile, JSON.stringify(dstData, null, 2) + '\n')
+
     return json({ ok: true, migrated })
   } catch (e: any) {
     return err(e.message, 500)
+  }
+}
+
+function copyDirRecursive(src: string, dst: string) {
+  mkdirSync(dst, { recursive: true })
+  for (const entry of readdirSync(src, { withFileTypes: true })) {
+    const srcPath = join(src, entry.name)
+    const dstPath = join(dst, entry.name)
+    if (entry.isDirectory()) {
+      copyDirRecursive(srcPath, dstPath)
+    } else if (!existsSync(dstPath)) {
+      // Only copy if not already exists (don't overwrite)
+      copyFileSync(srcPath, dstPath)
+    }
   }
 }
 

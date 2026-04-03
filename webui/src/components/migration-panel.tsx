@@ -6,10 +6,9 @@ const FIELD_GROUPS = [
   { key: 'env', label: '环境变量 (env)' },
   { key: 'model', label: '模型配置 (model)' },
   { key: 'permissions', label: '权限模式 (permissions)' },
-  { key: 'alwaysThink', label: '始终思考 (alwaysThink)' },
-  { key: 'skipDangerousConfirmation', label: '跳过确认 (skipDangerousConfirmation)' },
-  { key: 'preferredLanguage', label: '语言 (preferredLanguage)' },
-  { key: 'thinkingLevel', label: '推理强度 (thinkingLevel)' },
+  { key: 'alwaysThinkingEnabled', label: '始终思考' },
+  { key: 'skipDangerousModePermissionPrompt', label: '跳过确认' },
+  { key: 'language', label: '语言' },
 ]
 
 export function MigrationPanel() {
@@ -18,6 +17,7 @@ export function MigrationPanel() {
   const [fromData, setFromData] = useState<Record<string, unknown>>({})
   const [toData, setToData] = useState<Record<string, unknown>>({})
   const [selected, setSelected] = useState<string[]>([])
+  const [includeSessions, setIncludeSessions] = useState(false)
   const [migrating, setMigrating] = useState(false)
   const [result, setResult] = useState<string | null>(null)
 
@@ -36,7 +36,11 @@ export function MigrationPanel() {
     setMigrating(true)
     setResult(null)
     try {
-      const res = await migrate({ from, to, fields: selected.length > 0 ? selected : undefined })
+      const res = await migrate({
+        from, to,
+        fields: selected.length > 0 ? selected : undefined,
+        includeSessions,
+      })
       setResult(`迁移成功: ${res.migrated.join(', ')}`)
       getSettings(to).then(setToData).catch(() => {})
     } catch (e: any) {
@@ -91,12 +95,24 @@ export function MigrationPanel() {
       </div>
 
       <div className="flex items-center gap-3">
+        <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={includeSessions}
+            onChange={e => setIncludeSessions(e.target.checked)}
+            className="rounded"
+          />
+          同时迁移会话记录 (projects/)
+        </label>
+      </div>
+
+      <div className="flex items-center gap-3">
         <button
           onClick={doMigrate}
           disabled={migrating}
           className="px-4 py-2 text-sm bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white rounded-lg transition-colors"
         >
-          {migrating ? '迁移中...' : selected.length > 0 ? `迁移 ${selected.length} 个字段` : '全量迁移'}
+          {migrating ? '迁移中...' : selected.length > 0 ? `迁移 ${selected.length} 个字段${includeSessions ? ' + 会话' : ''}` : `全量迁移${includeSessions ? ' + 会话' : ''}`}
         </button>
         {result && (
           <span className={`text-xs ${result.startsWith('迁移成功') ? 'text-green-400' : 'text-red-400'}`}>
