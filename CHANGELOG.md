@@ -2,6 +2,13 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
+## [1.1.8] - 2026-04-03
+
+### Fixed
+
+- **Windows npm 全局安装平台包缺失** — bin wrapper 检测到平台包未安装时自动执行 `npm install -g` 安装对应平台包，不再需要用户手动操作
+- **bin wrapper 路径查找优化** — 修正全局 node_modules 扁平布局下 scope 目录的路径拼接
+
 ## [1.1.7] - 2026-04-03
 
 ### Fixed

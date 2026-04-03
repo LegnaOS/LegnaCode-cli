@@ -1,6 +1,6 @@
 {
   "name": "@legna-lnc/legnacode",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "description": "LegnaCode — legna.lnc's official CLI for coding assistance",
   "type": "module",
   "bin": {
@@ -141,10 +141,10 @@
     "bun": ">=1.2.0"
   },
   "optionalDependencies": {
-    "@legna-lnc/legnacode-darwin-arm64": "1.1.7",
-    "@legna-lnc/legnacode-darwin-x64": "1.1.7",
-    "@legna-lnc/legnacode-linux-x64": "1.1.7",
-    "@legna-lnc/legnacode-linux-arm64": "1.1.7",
-    "@legna-lnc/legnacode-win32-x64": "1.1.7"
+    "@legna-lnc/legnacode-darwin-arm64": "1.1.8",
+    "@legna-lnc/legnacode-darwin-x64": "1.1.8",
+    "@legna-lnc/legnacode-linux-x64": "1.1.8",
+    "@legna-lnc/legnacode-linux-arm64": "1.1.8",
+    "@legna-lnc/legnacode-win32-x64": "1.1.8"
   }
 }

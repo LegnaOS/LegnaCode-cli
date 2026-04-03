@@ -26,31 +26,56 @@ if (!pkg) {
 }
 
 var binName = process.platform === "win32" ? "legna.exe" : "bin/legna";
-var bin = null;
 
-// Strategy 1: require.resolve (standard npm nested node_modules)
-try {
-  bin = path.resolve(require.resolve(pkg + "/package.json"), "..", binName);
-} catch (e) {}
+function findBin() {
+  // Strategy 1: require.resolve (standard npm nested node_modules)
+  try {
+    var p = path.resolve(require.resolve(pkg + "/package.json"), "..", binName);
+    if (fs.existsSync(p)) return p;
+  } catch (e) {}
 
-// Strategy 2: sibling in global node_modules (npm global flat layout)
-if (!bin || !fs.existsSync(bin)) {
-  var globalFlat = path.resolve(__dirname, "..", "..", pkg.replace("@legna-lnc/", "@legna-lnc" + path.sep), binName);
-  if (fs.existsSync(globalFlat)) bin = globalFlat;
-}
+  // Strategy 2: sibling in global node_modules (npm global flat layout)
+  // __dirname = .../node_modules/@legna-lnc/legnacode/npm/bin
+  // target    = .../node_modules/@legna-lnc/legnacode-<platform>/...
+  var scopeDir = path.resolve(__dirname, "..", "..", "..");
+  var pkgName = pkg.split("/")[1]; // e.g. "legnacode-win32-x64"
+  var flat = path.resolve(scopeDir, pkgName, binName);
+  if (fs.existsSync(flat)) return flat;
 
-// Strategy 3: nested node_modules inside our own package
-if (!bin || !fs.existsSync(bin)) {
+  // Strategy 3: nested node_modules inside our own package
   var nested = path.resolve(__dirname, "..", "..", "node_modules", pkg, binName);
-  if (fs.existsSync(nested)) bin = nested;
+  if (fs.existsSync(nested)) return nested;
+
+  return null;
 }
 
-if (!bin || !fs.existsSync(bin)) {
-  console.error(
-    "legna: could not find platform package " + pkg + "\n" +
-    "Try: npm install -g " + pkg
+var bin = findBin();
+
+// Strategy 4: auto-install the platform package if missing
+if (!bin) {
+  var version = "1.1.7";
+  try {
+    var ourPkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, "..", "..", "package.json"), "utf-8"));
+    version = ourPkg.version || version;
+  } catch (e) {}
+
+  console.error("legna: platform package " + pkg + " not found, installing...");
+  var install = childProcess.spawnSync(
+    "npm", ["install", "-g", pkg + "@" + version],
+    { stdio: "inherit", shell: true }
   );
-  process.exit(1);
+
+  if (install.status === 0) {
+    bin = findBin();
+  }
+
+  if (!bin) {
+    console.error(
+      "legna: could not find or install platform package " + pkg + "\n" +
+      "Try manually: npm install -g " + pkg + "@" + version
+    );
+    process.exit(1);
+  }
 }
 
 var result = childProcess.spawnSync(bin, process.argv.slice(2), {
