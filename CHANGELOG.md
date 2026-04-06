@@ -2,6 +2,20 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
+## [1.3.1] - 2026-04-06
+
+### Bug Fixes
+
+- **Snip 感知 context window** — 1M 模型不再被过早 snip，`KEEP_RECENT` 从硬编码 10 改为动态计算（1M: 200, 500K: 100, 200K: 10）
+- **Snip nudge 频率** — 1M 模型 nudge 阈值从 20 条提升到 100 条
+- **branch 命令品牌名** — `/branch` 后的 resume 提示从 `claude -r` 改为 `legna -r`
+- **admin 版本号 fallback** — 从源码运行时显示正确版本号
+
+### Architecture
+
+- `src/services/compact/snipCompact.ts` — 新增 `getSnipThresholds(model)` 动态阈值函数，`snipCompactIfNeeded` 和 `shouldNudgeForSnips` 增加 model 参数
+- `src/query.ts` / `src/QueryEngine.ts` / `src/commands/force-snip-impl.ts` — 传入 model 参数
+
 ## [1.3.0] - 2026-04-04
 
 ### New Features

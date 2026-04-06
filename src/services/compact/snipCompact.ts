@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto'
 import type { Message, SystemMessage } from '../../types/message.js'
+import { getContextWindowForModel } from '../../utils/context.js'
 
 export function isSnipRuntimeEnabled(): boolean {
   return true // Build-time feature gate is sufficient
@@ -13,11 +14,26 @@ export function isSnipMarkerMessage(msg: Message): boolean {
 }
 
 /**
+ * Dynamic snip thresholds based on model context window size.
+ * 1M models get much higher limits to avoid premature snipping.
+ */
+function getSnipThresholds(model?: string): { keepRecent: number; minToSnip: number } {
+  if (!model) return { keepRecent: 10, minToSnip: 4 }
+  const contextWindow = getContextWindowForModel(model)
+  if (contextWindow >= 1_000_000) {
+    return { keepRecent: 200, minToSnip: 50 }
+  }
+  if (contextWindow >= 500_000) {
+    return { keepRecent: 100, minToSnip: 25 }
+  }
+  return { keepRecent: 10, minToSnip: 4 }
+}
+
+/**
  * Throttled check: should we nudge the model to use the snip tool?
  * Looks for growth since the last snip boundary, compact boundary, or nudge.
  */
-export function shouldNudgeForSnips(messages: Message[]): boolean {
-  // Count non-meta user/assistant messages since the last snip or compact boundary
+export function shouldNudgeForSnips(messages: Message[], model?: string): boolean {
   let countSinceBoundary = 0
   for (let i = messages.length - 1; i >= 0; i--) {
     const msg = messages[i]!
@@ -36,8 +52,8 @@ export function shouldNudgeForSnips(messages: Message[]): boolean {
       countSinceBoundary++
     }
   }
-  // Rough heuristic: nudge every ~20 non-meta messages (~10k tokens at ~500 tok/msg)
-  return countSinceBoundary >= 20
+  const threshold = model ? (getContextWindowForModel(model) >= 1_000_000 ? 100 : 20) : 20
+  return countSinceBoundary >= threshold
 }
 
 /**
@@ -51,7 +67,7 @@ export function shouldNudgeForSnips(messages: Message[]): boolean {
  */
 export function snipCompactIfNeeded(
   messages: Message[],
-  opts?: { force?: boolean },
+  opts?: { force?: boolean; model?: string },
 ): {
   messages: Message[]
   tokensFreed: number
@@ -62,10 +78,7 @@ export function snipCompactIfNeeded(
     return { messages, tokensFreed: 0, boundaryMessage: null, executed: false }
   }
 
-  // Find non-meta user/assistant messages eligible for snipping.
-  // We keep the most recent messages and snip older ones.
-  const KEEP_RECENT = 10 // always keep the last N non-meta messages
-  const MIN_TO_SNIP = 4 // don't bother snipping fewer than this
+  const { keepRecent, minToSnip } = getSnipThresholds(opts?.model)
 
   const nonMetaIndices: number[] = []
   for (let i = 0; i < messages.length; i++) {
@@ -78,12 +91,11 @@ export function snipCompactIfNeeded(
     }
   }
 
-  const snipCandidateCount = nonMetaIndices.length - KEEP_RECENT
-  if (!opts?.force && snipCandidateCount < MIN_TO_SNIP) {
+  const snipCandidateCount = nonMetaIndices.length - keepRecent
+  if (!opts?.force && snipCandidateCount < minToSnip) {
     return { messages, tokensFreed: 0, boundaryMessage: null, executed: false }
   }
 
-  // Determine which messages to remove
   const snipCount = Math.max(0, snipCandidateCount)
   if (snipCount === 0) {
     return { messages, tokensFreed: 0, boundaryMessage: null, executed: false }
@@ -98,11 +110,9 @@ export function snipCompactIfNeeded(
     if ('uuid' in msg && typeof msg.uuid === 'string') {
       removedUuids.push(msg.uuid)
     }
-    // Rough token estimate: ~500 tokens per message
     estimatedTokensFreed += 500
   }
 
-  // Create the snip boundary message
   const boundaryMessage: Message = {
     type: 'system',
     subtype: 'snip_boundary',
@@ -118,7 +128,6 @@ export function snipCompactIfNeeded(
     },
   } as Message
 
-  // Filter out removed messages and insert boundary
   const filtered: Message[] = []
   let boundaryInserted = false
   for (let i = 0; i < messages.length; i++) {

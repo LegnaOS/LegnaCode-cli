@@ -1278,7 +1278,7 @@ export async function* ask({
           snipReplay: (yielded: Message, store: Message[]) => {
             if (!snipProjection!.isSnipBoundaryMessage(yielded))
               return undefined
-            return snipModule!.snipCompactIfNeeded(store, { force: true })
+            return snipModule!.snipCompactIfNeeded(store, { force: true, model: userSpecifiedModel })
           },
         }
       : {}),

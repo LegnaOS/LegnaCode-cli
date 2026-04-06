@@ -3,7 +3,7 @@ import { snipCompactIfNeeded } from '../services/compact/snipCompact.js'
 
 export const call: LocalCommandCall = async (_args, context) => {
   const { messages } = context
-  const result = snipCompactIfNeeded(messages, { force: true })
+  const result = snipCompactIfNeeded(messages, { force: true, model: context.options?.mainLoopModel })
 
   if (!result.executed) {
     return { type: 'text', value: 'No messages available to snip.' }
