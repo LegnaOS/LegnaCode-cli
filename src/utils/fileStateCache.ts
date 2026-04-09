@@ -1,5 +1,5 @@
 import { LRUCache } from 'lru-cache'
-import { normalize } from 'path'
+import { normalize, sep } from 'path'
 
 export type FileState = {
   content: string
@@ -22,6 +22,20 @@ export const READ_FILE_STATE_CACHE_SIZE = 100
 const DEFAULT_MAX_CACHE_SIZE_BYTES = 25 * 1024 * 1024
 
 /**
+ * Normalize a path key for consistent cache lookups.
+ * path.normalize() resolves `.` / `..` segments but some runtimes (e.g. Bun
+ * on Windows under Git Bash) may not consistently convert forward slashes to
+ * the native separator. We explicitly replace `/` → `\` on Windows so that
+ * `D:/foo` and `D:\foo` always resolve to the same cache key.
+ *
+ * On POSIX this is a no-op (sep === '/').
+ */
+function normalizeKey(key: string): string {
+  const n = normalize(key)
+  return sep === '\\' ? n.replace(/\//g, '\\') : n
+}
+
+/**
  * A file state cache that normalizes all path keys before access.
  * This ensures consistent cache hits regardless of whether callers pass
  * relative vs absolute paths with redundant segments (e.g. /foo/../bar)
@@ -39,20 +53,20 @@ export class FileStateCache {
   }
 
   get(key: string): FileState | undefined {
-    return this.cache.get(normalize(key))
+    return this.cache.get(normalizeKey(key))
   }
 
   set(key: string, value: FileState): this {
-    this.cache.set(normalize(key), value)
+    this.cache.set(normalizeKey(key), value)
     return this
   }
 
   has(key: string): boolean {
-    return this.cache.has(normalize(key))
+    return this.cache.has(normalizeKey(key))
   }
 
   delete(key: string): boolean {
-    return this.cache.delete(normalize(key))
+    return this.cache.delete(normalizeKey(key))
   }
 
   clear(): void {

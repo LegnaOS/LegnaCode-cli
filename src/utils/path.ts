@@ -1,9 +1,27 @@
 import { homedir } from 'os'
-import { dirname, isAbsolute, join, normalize, relative, resolve } from 'path'
+import {
+  dirname,
+  isAbsolute,
+  join,
+  normalize,
+  relative,
+  resolve,
+  sep,
+} from 'path'
 import { getCwd } from './cwd.js'
 import { getFsImplementation } from './fsOperations.js'
 import { getPlatform } from './platform.js'
 import { posixPathToWindowsPath } from './windowsPaths.js'
+
+/**
+ * Ensure a normalized path uses the native separator on Windows.
+ * path.normalize() should do this, but some runtimes (Bun compiled binaries
+ * running under Git Bash / MINGW) may leave forward slashes intact.
+ * On POSIX this is a no-op.
+ */
+function ensureNativeSeparators(p: string): string {
+  return sep === '\\' ? p.replace(/\//g, '\\') : p
+}
 
 /**
  * Expands a path that may contain tilde notation (~) to an absolute path.
@@ -52,16 +70,18 @@ export function expandPath(path: string, baseDir?: string): string {
   // Handle empty or whitespace-only paths
   const trimmedPath = path.trim()
   if (!trimmedPath) {
-    return normalize(actualBaseDir).normalize('NFC')
+    return ensureNativeSeparators(normalize(actualBaseDir)).normalize('NFC')
   }
 
   // Handle home directory notation
   if (trimmedPath === '~') {
-    return homedir().normalize('NFC')
+    return ensureNativeSeparators(homedir()).normalize('NFC')
   }
 
   if (trimmedPath.startsWith('~/')) {
-    return join(homedir(), trimmedPath.slice(2)).normalize('NFC')
+    return ensureNativeSeparators(
+      join(homedir(), trimmedPath.slice(2)),
+    ).normalize('NFC')
   }
 
   // On Windows, convert POSIX-style paths (e.g., /c/Users/...) to Windows format
@@ -77,11 +97,13 @@ export function expandPath(path: string, baseDir?: string): string {
 
   // Handle absolute paths
   if (isAbsolute(processedPath)) {
-    return normalize(processedPath).normalize('NFC')
+    return ensureNativeSeparators(normalize(processedPath)).normalize('NFC')
   }
 
   // Handle relative paths
-  return resolve(actualBaseDir, processedPath).normalize('NFC')
+  return ensureNativeSeparators(
+    resolve(actualBaseDir, processedPath),
+  ).normalize('NFC')
 }
 
 /**

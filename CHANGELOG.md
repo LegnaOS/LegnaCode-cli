@@ -2,6 +2,19 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
+## [1.3.6] - 2026-04-09
+
+### Bug Fixes
+
+- **Windows Edit 工具路径分隔符误报** — 修复 [#7935](https://github.com/anthropics/claude-code/issues/7935)：在 Windows 上使用正斜杠（`D:/path`）读取文件后，Edit/MultiEdit 工具报 "File has been unexpectedly modified" 错误。根因是 `path.normalize()` 在某些运行时（Bun 编译二进制 + Git Bash/MINGW 环境）不一定将 `/` 转换为 `\`，导致 FileStateCache 缓存键不匹配
+  - `FileStateCache` 新增 `normalizeKey()` — 在 `path.normalize()` 之后显式将 `/` 替换为原生分隔符（Windows 上为 `\`），确保 `D:/foo` 和 `D:\foo` 始终命中同一缓存条目
+  - `expandPath()` 新增 `ensureNativeSeparators()` — 所有返回路径在 Windows 上强制使用反斜杠，防御性修复
+
+### Architecture
+
+- `src/utils/fileStateCache.ts` — `normalizeKey()` 替代裸 `normalize()`，导入 `sep`
+- `src/utils/path.ts` — `ensureNativeSeparators()` 包裹所有 `normalize()`/`resolve()`/`join()` 返回值
+
 ## [1.3.5] - 2026-04-07
 
 ### Bug Fixes
