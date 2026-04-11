@@ -590,7 +590,7 @@ function createDefaultGlobalConfig(): GlobalConfig {
     autoUpdates: undefined,
     theme: 'dark',
     preferredNotifChannel: 'auto',
-    verbose: false,
+    verbose: true,
     editorMode: 'normal',
     autoCompactEnabled: true,
     showTurnDuration: true,
