@@ -4,6 +4,8 @@
 
 LegnaCode 是一个基于 Anthropic Claude 的智能终端编程助手，让你直接在命令行中与 AI 协作完成软件工程任务——编辑文件、执行命令、搜索代码、管理 Git 工作流等。
 
+> 📊 **与 Claude Code 原版的详细对比** → [COMPARISON.md](./COMPARISON.md)
+
 ---
 
 ## 更新日志
