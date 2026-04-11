@@ -23,6 +23,7 @@ import {
   type RecompactionInfo,
 } from './compact.js'
 import { pruneToolOutput } from './toolOutputPruner.js'
+import { getActiveProviders } from '../../memdir/providers/registry.js'
 import { runPostCompactCleanup } from './postCompactCleanup.js'
 import { trySessionMemoryCompaction } from './sessionMemoryCompact.js'
 
@@ -311,6 +312,16 @@ export async function autoCompactIfNeeded(
   }
 
   try {
+    // Pre-compact memory save: extract exchange pairs before they're lost.
+    // This is the mempalace preCompact hook — force save before compression.
+    try {
+      for (const provider of getActiveProviders()) {
+        provider.onPreCompress(messages)
+      }
+    } catch (err) {
+      logForDebugging(`[autocompact] onPreCompress error (non-fatal): ${err}`)
+    }
+
     // Pre-prune large tool outputs before compaction to reduce context size.
     // This trims oversized tool_result content blocks (file reads, grep output)
     // while preserving head+tail for context.

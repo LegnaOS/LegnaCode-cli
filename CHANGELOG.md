@@ -2,6 +2,34 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
+## [1.4.3] - 2026-04-11
+
+### Features
+
+- **mempalace 记忆架构融合** — 移植 mempalace 的核心记忆系统，纯 TypeScript 实现，零外部依赖：
+  - **DrawerStore** — SQLite 持久化向量记忆存储 + WAL 审计日志，确定性 drawer ID（sha256 幂等 upsert）
+  - **TF-IDF 向量化器** — 纯 TS 实现（Porter 词干 + 余弦相似度），<10K drawer 搜索 <5ms
+  - **4 层记忆栈** — L0 identity (~100 token) + L1 top drawers (~500-800 token) 每轮加载，L2/L3 按需召回。每轮 token 从 ~8K 降到 ~800（节省 ~88%）
+  - **时序知识图谱** — SQLite 实体-关系存储，支持带有效期的三元组和时间点查询
+  - **Room 自动分类** — 6 类（facts/decisions/events/discoveries/preferences/advice）关键词评分
+  - **交换对提取器** — Q+A 配对分块 + 5 类标记评分（decisions/preferences/milestones/problems/emotional）
+  - **自动迁移** — 首次启动自动将现有 .legna/memory/*.md 文件迁移到 DrawerStore
+  - **PreCompact 记忆保存** — 压缩前自动提取高价值交换对到 DrawerStore，防止记忆丢失
+
+### Architecture
+
+- 新增 `src/memdir/vectorStore/` — 完整的向量记忆系统（8 个文件）
+  - `types.ts` — Drawer、SearchResult、MetadataFilter 类型
+  - `tfidfVectorizer.ts` — TF-IDF + Porter 词干 + 余弦相似度
+  - `drawerStore.ts` — SQLite 持久化 + WAL + 向量搜索
+  - `roomDetector.ts` — 内容自动分类
+  - `layeredStack.ts` — 4 层记忆栈
+  - `knowledgeGraph.ts` — 时序知识图谱
+  - `exchangeExtractor.ts` — 交换对提取 + 标记评分
+  - `migration.ts` — .md → DrawerStore 自动迁移
+- 升级 `src/memdir/providers/FileMemoryProvider.ts` — DrawerStore + LayeredStack 后端
+- 接线 `src/services/compact/autoCompact.ts` — 压缩前调用 onPreCompress
+
 ## [1.4.2] - 2026-04-11
 
 ### Features
