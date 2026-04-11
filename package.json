@@ -146,6 +146,7 @@
     "@legna-lnc/legnacode-darwin-x64": "1.4.2",
     "@legna-lnc/legnacode-linux-x64": "1.4.2",
     "@legna-lnc/legnacode-linux-arm64": "1.4.2",
-    "@legna-lnc/legnacode-win32-x64": "1.4.2"
+    "@legna-lnc/legnacode-win32-x64": "1.4.2",
+    "@legna-lnc/legnacode-win32-ia32": "1.4.2"
   }
 }
