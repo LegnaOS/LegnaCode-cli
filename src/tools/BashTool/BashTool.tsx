@@ -800,6 +800,14 @@ export const BashTool = buildTool({
         isImage = false;
       }
     }
+    // AtomCode fusion: auto-inject error file context on bash failure
+    if (result.code !== 0 && !wasInterrupted && !isImage) {
+      const { extractErrorFiles } = await import('../../services/tools/toolIntelligence.js')
+      const errorContext = extractErrorFiles(compressedStdout, result.code)
+      if (errorContext) {
+        compressedStdout = compressedStdout + errorContext
+      }
+    }
     const data: Out = {
       stdout: compressedStdout,
       stderr: stderrForShellReset,

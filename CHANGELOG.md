@@ -8,12 +8,32 @@ All notable changes to LegnaCode CLI will be documented in this file.
 
 ### Features
 
-- **AtomCode intelligence fusion** — Ported 4 lightweight agent intelligence techniques from AtomCode (Rust-based Claude Code alternative), zero new dependencies:
-  - **Pangu CJK spacing** — Auto-inserts spaces between CJK characters and ASCII letters/numbers in Markdown rendering. Render-time only, never modifies source content.
-  - **Negative feedback detection** — Detects user frustration in short messages ("still broken", "错了", "まだ壊れ") and injects a strategy-shift hint (~25 tokens). Multilingual (EN/ZH/JA).
-  - **Tool call loop detection** — Tracks last 15 tool calls by `(toolName, argsHash)`. Same combination 3+ times → blocks with "try a different approach". Resets on each user message.
-  - **Error file pre-injection** — When bash commands fail, extracts file paths from stderr, auto-reads first 30 lines of up to 3 files into tool result.
-  - **First-read full file** — First time reading any file, ignores AI-requested offset/limit and forces full read. Prevents 4-7 fragmented read cycles.
+- **AtomCode intelligence fusion (Layer A)** — Lightweight agent intelligence, zero new dependencies:
+  - **Pangu CJK spacing** — Auto-inserts spaces between CJK and ASCII in Markdown rendering
+  - **Negative feedback detection** — Detects frustration ("still broken"/"错了"/"まだ壊れ"), injects strategy-shift hint (EN/ZH/JA)
+  - **Tool call loop detection** — Same (tool, args) 3+ times → blocks. Resets per user message
+  - **Error file pre-injection** — Bash fail → extracts file paths from stderr, auto-reads first 30 lines
+  - **First-read full file** — First encounter ignores offset/limit, forces full read
+
+- **OpenAI-compatible bridge adapter (Layer B1)** — Full Anthropic ↔ OpenAI format translation:
+  - Message format: `tool_use` ↔ `tool_calls`, `tool_result` ↔ `role: "tool"`
+  - Tool schema: `input_schema` ↔ `function.parameters`
+  - JSON repair for weak models (markdown fences, trailing commas, unbalanced brackets)
+  - Supports: OpenAI, DeepSeek, Qwen, GLM, SiliconFlow, Ollama, vLLM, LM Studio
+  - Activate: `OPENAI_COMPAT_BASE_URL` + `OPENAI_COMPAT_API_KEY` env vars
+
+- **Code Graph (Layer B2)** — Regex-based symbol index + file dependency graph:
+  - Languages: TypeScript/TSX, JavaScript, Python, Go, Rust
+  - Incremental mtime updates, persisted to `<cwd>/.legna/.palace/graph.json`
+  - APIs: `getFileSummary()`, `traceCallers()`, `blastRadius()`
+
+- **Parallel File Edit (Layer B3)** — "One sub-agent per file" execution model:
+  - Target file full text + sibling skeletons + interface contracts
+  - Conflict detection across parallel edits
+
+- **Workflow Engine (Layer B4)** — Structured step execution:
+  - Markdown `## Step N:` format with checks, failure handling, dependencies
+  - State tracking, retry logic, status summary
 
 ## [1.4.7] - 2026-04-16
 

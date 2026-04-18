@@ -6,12 +6,32 @@ All notable changes to LegnaCode CLI will be documented in this file.
 
 ### Features
 
-- **AtomCode 智能融合** — 从 AtomCode（Rust 实现的 Claude Code 替代品）移植 4 项轻量 Agent 智能技术，零新依赖：
-  - **Pangu CJK 间距** — Markdown 渲染时自动在中日韩字符与 ASCII 字母/数字之间插入空格，仅渲染时生效
-  - **负面反馈检测** — 检测用户短消息中的挫败信号（"still broken"/"错了"/"まだ壊れ"），注入策略转换提示，多语言（EN/ZH/JA）
+- **AtomCode 智能融合（Layer A）** — 轻量 Agent 智能增强，零新依赖：
+  - **Pangu CJK 间距** — Markdown 渲染时自动在中日韩字符与 ASCII 之间插入空格
+  - **负面反馈检测** — 检测挫败信号（"still broken"/"错了"/"まだ壊れ"），注入策略转换提示（EN/ZH/JA）
   - **工具调用循环检测** — 同组合 3+ 次 → 阻断，每次用户消息重置
   - **错误文件预注入** — bash 失败时从 stderr 提取文件路径，自动读取前 30 行注入结果
-  - **首次读取强制全文** — 第一次读某文件时强制全文，防止分段读取
+  - **首次读取强制全文** — 第一次读某文件时忽略 offset/limit，强制全文读取
+
+- **OpenAI 兼容桥接器（Layer B1）** — 完整 Anthropic ↔ OpenAI 格式翻译层：
+  - 消息格式：`tool_use` ↔ `tool_calls`，`tool_result` ↔ `role: "tool"`
+  - 工具 schema：`input_schema` ↔ `function.parameters`
+  - 弱模型 JSON 修复（markdown 围栏、尾逗号、不平衡括号）
+  - 支持：OpenAI、DeepSeek、Qwen、GLM、SiliconFlow、Ollama、vLLM、LM Studio
+  - 激活：设置 `OPENAI_COMPAT_BASE_URL` + `OPENAI_COMPAT_API_KEY` 环境变量
+
+- **代码图谱（Layer B2）** — 正则符号索引 + 文件依赖图：
+  - 语言：TypeScript/TSX、JavaScript、Python、Go、Rust
+  - 增量 mtime 更新，持久化到 `<cwd>/.legna/.palace/graph.json`
+  - API：`getFileSummary()`、`traceCallers()`、`blastRadius()`
+
+- **并行文件编辑（Layer B3）** — "每文件一个子代理"执行模式：
+  - 目标文件全文 + 兄弟文件骨架 + 接口契约
+  - 跨并行编辑冲突检测
+
+- **工作流引擎（Layer B4）** — 结构化步骤执行：
+  - Markdown `## Step N:` 格式，支持检查条件、失败处理、步骤依赖
+  - 状态追踪、重试逻辑、进度摘要
 
 ## [1.4.7] - 2026-04-16
 

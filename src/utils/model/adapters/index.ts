@@ -47,7 +47,9 @@ function getAdapters(): ModelAdapter[] {
     const { DeepSeekAdapter } = require('./deepseek.js')
     const { KimiAdapter } = require('./kimi.js')
     const { MiniMaxAdapter } = require('./minimax.js')
+    const { OpenAICompatAdapter } = require('./openaiCompat.js')
     _adapters = [
+      OpenAICompatAdapter, // Must be first — catches all when OPENAI_COMPAT_BASE_URL is set
       MiMoAdapter,
       GLMAdapter,
       DeepSeekAdapter,

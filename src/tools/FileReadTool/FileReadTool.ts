@@ -494,11 +494,17 @@ export const FileReadTool = buildTool({
     return { result: true }
   },
   async call(
-    { file_path, offset = 1, limit = undefined, pages },
+    { file_path, offset: rawOffset = 1, limit: rawLimit = undefined, pages },
     context,
     _canUseTool?,
     parentMessage?,
   ) {
+    // AtomCode fusion: force full read on first encounter of a file
+    const { shouldForceFullRead } = await import('../../services/tools/toolIntelligence.js')
+    const forceFullRead = shouldForceFullRead(file_path)
+    const offset = forceFullRead ? 1 : rawOffset
+    const limit = forceFullRead ? undefined : rawLimit
+
     const { readFileState, fileReadingLimits } = context
 
     const defaults = getDefaultFileReadingLimits()

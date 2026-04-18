@@ -1,0 +1,220 @@
+/**
+ * OpenAI-Compatible Bridge Adapter
+ *
+ * Translates between Anthropic Messages API format and OpenAI Chat Completions format.
+ * Enables LegnaCode to work with any OpenAI-compatible endpoint:
+ * OpenAI, DeepSeek (native), Qwen, GLM, SiliconFlow, Ollama, vLLM, LM Studio.
+ *
+ * Ported from AtomCode's provider abstraction (Rust → TypeScript).
+ *
+ * Activation: set OPENAI_COMPAT_BASE_URL + OPENAI_COMPAT_API_KEY env vars,
+ * or configure in settings.json: { "openaiCompat": { "baseUrl": "...", "apiKey": "..." } }
+ */
+
+import type { ModelAdapter } from './index.js'
+
+// ── Message Format Translation ──────────────────────────────────────
+
+interface AnthropicMessage {
+  role: string
+  content: any
+  [key: string]: any
+}
+
+interface OpenAIMessage {
+  role: string
+  content: string | null
+  tool_calls?: OpenAIToolCall[]
+  tool_call_id?: string
+  name?: string
+  [key: string]: any
+}
+
+interface OpenAIToolCall {
+  id: string
+  type: 'function'
+  function: { name: string; arguments: string }
+}
+
+/** Convert Anthropic system blocks to a single OpenAI system message */
+function convertSystem(system: any): string {
+  if (!system) return ''
+  if (typeof system === 'string') return system
+  if (Array.isArray(system)) {
+    return system
+      .filter((b: any) => b.type === 'text')
+      .map((b: any) => b.text)
+      .join('\n\n')
+  }
+  return ''
+}
+
+/** Convert Anthropic content blocks to OpenAI message format */
+function convertAnthropicToOpenAI(msg: AnthropicMessage): OpenAIMessage[] {
+  const { role, content } = msg
+
+  // Simple string content
+  if (typeof content === 'string') {
+    return [{ role, content }]
+  }
+
+  if (!Array.isArray(content)) {
+    return [{ role, content: JSON.stringify(content) }]
+  }
+
+  // tool_result → OpenAI tool message
+  const toolResults = content.filter((b: any) => b.type === 'tool_result')
+  if (toolResults.length > 0) {
+    return toolResults.map((b: any) => ({
+      role: 'tool' as const,
+      content: typeof b.content === 'string'
+        ? b.content
+        : Array.isArray(b.content)
+          ? b.content.filter((c: any) => c.type === 'text').map((c: any) => c.text).join('\n')
+          : JSON.stringify(b.content ?? ''),
+      tool_call_id: b.tool_use_id,
+    }))
+  }
+
+  // assistant with tool_use blocks
+  const toolUses = content.filter((b: any) => b.type === 'tool_use')
+  const textParts = content.filter((b: any) => b.type === 'text').map((b: any) => b.text).join('')
+
+  if (toolUses.length > 0 && role === 'assistant') {
+    return [{
+      role: 'assistant',
+      content: textParts || null,
+      tool_calls: toolUses.map((b: any) => ({
+        id: b.id,
+        type: 'function' as const,
+        function: {
+          name: b.name,
+          arguments: typeof b.input === 'string' ? b.input : JSON.stringify(b.input ?? {}),
+        },
+      })),
+    }]
+  }
+
+  // Default: concatenate text blocks
+  const text = content
+    .filter((b: any) => b.type === 'text' || b.type === 'thinking')
+    .map((b: any) => b.text ?? b.thinking ?? '')
+    .join('')
+  return [{ role, content: text || '' }]
+}
+
+/** Convert Anthropic tool schema to OpenAI function calling format */
+function convertToolSchema(tools: any[]): any[] {
+  if (!tools || !Array.isArray(tools)) return []
+  return tools.map((tool: any) => ({
+    type: 'function',
+    function: {
+      name: tool.name,
+      description: tool.description ?? '',
+      parameters: tool.input_schema ?? tool.parameters ?? { type: 'object', properties: {} },
+    },
+  }))
+}
+
+/** Repair malformed JSON from weak models (trailing commas, markdown fences, unbalanced brackets) */
+function repairToolArgs(raw: string): string {
+  let s = raw.trim()
+  // Strip markdown code fences
+  if (s.startsWith('```')) {
+    s = s.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '')
+  }
+  // Remove trailing commas before } or ]
+  s = s.replace(/,\s*([}\]])/g, '$1')
+  // Try to balance brackets
+  const opens = (s.match(/\{/g) || []).length
+  const closes = (s.match(/\}/g) || []).length
+  if (opens > closes) s += '}'.repeat(opens - closes)
+  return s
+}
+
+/** Normalize base URL: ensure no trailing slash, append /v1 if missing */
+function normalizeBaseUrl(url: string): string {
+  let u = url.replace(/\/+$/, '')
+  if (!u.endsWith('/v1')) u += '/v1'
+  return u
+}
+
+/** Check if OpenAI compat mode is active */
+export function isOpenAICompatActive(): boolean {
+  return !!(process.env.OPENAI_COMPAT_BASE_URL || process.env.OPENAI_COMPAT_API_KEY)
+}
+
+/**
+ * Transform Anthropic Messages API params into OpenAI Chat Completions params.
+ * This is the core bridge — called instead of sending to Anthropic API.
+ */
+export function anthropicToOpenAI(params: Record<string, any>): {
+  url: string
+  headers: Record<string, string>
+  body: Record<string, any>
+} {
+  const baseUrl = normalizeBaseUrl(
+    process.env.OPENAI_COMPAT_BASE_URL || 'http://localhost:11434/v1'
+  )
+  const apiKey = process.env.OPENAI_COMPAT_API_KEY || 'ollama'
+
+  // Convert messages
+  const openaiMessages: OpenAIMessage[] = []
+
+  // System message
+  const systemText = convertSystem(params.system)
+  if (systemText) {
+    openaiMessages.push({ role: 'system', content: systemText })
+  }
+
+  // Conversation messages
+  if (params.messages && Array.isArray(params.messages)) {
+    for (const msg of params.messages) {
+      openaiMessages.push(...convertAnthropicToOpenAI(msg))
+    }
+  }
+
+  // Build body
+  const body: Record<string, any> = {
+    model: params.model,
+    messages: openaiMessages,
+    stream: params.stream ?? true,
+    max_tokens: params.max_tokens,
+  }
+
+  // Tools
+  if (params.tools && params.tools.length > 0) {
+    body.tools = convertToolSchema(params.tools)
+    body.tool_choice = 'auto'
+  }
+
+  // Sampling params
+  if (params.temperature !== undefined) body.temperature = params.temperature
+  if (params.top_p !== undefined) body.top_p = params.top_p
+
+  return {
+    url: `${baseUrl}/chat/completions`,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body,
+  }
+}
+
+// ── Adapter Registration ────────────────────────────────────────────
+
+export const OpenAICompatAdapter: ModelAdapter = {
+  name: 'OpenAI-Compatible',
+
+  match(_model: string, baseUrl?: string): boolean {
+    return isOpenAICompatActive()
+  },
+
+  transformParams(params: Record<string, any>): Record<string, any> {
+    // Mark for the API layer to use OpenAI bridge instead of Anthropic
+    return { ...params, __openaiCompat: true }
+  },
+}
+
+export { repairToolArgs, normalizeBaseUrl, convertToolSchema }
