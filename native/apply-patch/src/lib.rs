@@ -44,7 +44,7 @@ enum HunkLine {
 }
 
 /// Parse a unified diff into hunks.
-fn parse_patch(patch: &str) -> Result<Vec<Hunk>, String> {
+fn parse_patch(patch: &str) -> std::result::Result<Vec<Hunk>, String> {
     let mut hunks = Vec::new();
     let mut lines = patch.lines().peekable();
 
@@ -103,7 +103,7 @@ fn parse_patch(patch: &str) -> Result<Vec<Hunk>, String> {
     Ok(hunks)
 }
 
-fn parse_range(range: &str) -> Result<(usize, usize), String> {
+fn parse_range(range: &str) -> std::result::Result<(usize, usize), String> {
     if let Some((start, count)) = range.split_once(',') {
         let s = start.parse::<usize>().map_err(|e| format!("bad range start: {e}"))?;
         let c = count.parse::<usize>().map_err(|e| format!("bad range count: {e}"))?;
