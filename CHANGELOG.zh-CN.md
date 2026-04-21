@@ -2,6 +2,10 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
+## [1.5.4] - 2026-04-21
+
+全平台二进制同步重发。
+
 ## [1.5.3] - 2026-04-21
 
 ### 新功能
