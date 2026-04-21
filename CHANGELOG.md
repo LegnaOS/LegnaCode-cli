@@ -4,6 +4,17 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
+## [1.8.2] - 2026-04-22
+
+### Bug Fixes
+
+- **Message Pipeline Null Guards** — Added defensive null checks to 11 functions in `src/utils/messages.ts` (`normalizeMessages`, `isNotEmptyMessage`, `isSyntheticMessage`, `isToolUseRequestMessage`, `isToolUseResultMessage`, `isHookAttachmentMessage`, `isSystemLocalCommandMessage`, `isThinkingMessage`, `getAssistantMessageText`, `getUserMessageText`, `reorderMessagesInUI`). Prevents `undefined is not an object (evaluating 'message.type')` runtime crash when message arrays contain undefined elements.
+- **Mode Command Disabled** — Removed `/mode` slash command registration to fix Bun compiled binary startup hang caused by JIT compilation stall.
+
+### Build
+
+- **Rust Native Addons (darwin-arm64)** — Compiled and bundled `sandbox`, `file-search`, `apply-patch` NAPI addons. Fixed missing `regex-lite` dependency in file-search crate and `Result` type mismatch in apply-patch crate.
+
 ## [1.8.0] - 2026-04-21
 
 > Codex Full Fusion Release — 5-phase integration of OpenAI Codex CLI capabilities into LegnaCode.

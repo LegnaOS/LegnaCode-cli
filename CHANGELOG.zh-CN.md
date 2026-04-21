@@ -2,6 +2,17 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
+## [1.8.2] - 2026-04-22
+
+### 修复
+
+- **消息管线空值守卫** — 为 `src/utils/messages.ts` 中 11 个函数添加防御性空值检查（`normalizeMessages`、`isNotEmptyMessage`、`isSyntheticMessage`、`isToolUseRequestMessage`、`isToolUseResultMessage`、`isHookAttachmentMessage`、`isSystemLocalCommandMessage`、`isThinkingMessage`、`getAssistantMessageText`、`getUserMessageText`、`reorderMessagesInUI`）。修复消息数组包含 undefined 元素时的 `undefined is not an object (evaluating 'message.type')` 运行时崩溃。
+- **禁用 Mode 命令** — 移除 `/mode` 斜杠命令注册，修复 Bun 编译后二进制启动卡死（JIT 编译停滞）。
+
+### 构建
+
+- **Rust 原生 Addon（darwin-arm64）** — 编译并打包 `sandbox`、`file-search`、`apply-patch` NAPI 插件。修复 file-search 缺少 `regex-lite` 依赖、apply-patch `Result` 类型不匹配的编译错误。
+
 ## [1.8.0] - 2026-04-21
 
 > Codex 全面融合版 — 5 阶段将 OpenAI Codex CLI 能力集成到 LegnaCode。
