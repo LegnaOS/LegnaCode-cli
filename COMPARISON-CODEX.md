@@ -1,33 +1,95 @@
 # LegnaCode vs OpenAI Codex CLI
 
-Feature comparison between LegnaCode v1.8.0 and OpenAI Codex CLI.
+🌐 [中文文档](./COMPARISON-CODEX.zh-CN.md)
 
-| Feature | LegnaCode | Codex CLI | Notes |
-|---------|-----------|-----------|-------|
-| **Sandbox** | Seatbelt (macOS) + seccomp (Linux) + container fallback | Seatbelt + bubblewrap + seccomp + Landlock | Both kernel-level; Codex has Landlock extra |
-| **Exec Policy** | Static TOML rules (prefix/glob/regex) + defaults | Starlark-like DSL | LegnaCode simpler syntax, same effect |
-| **Auto-Approval** | Guardian sub-agent (6-category risk taxonomy, fail-closed) | codex-auto-review model | Both dedicated approval; LegnaCode rule-based pre-filter |
-| **Process Hardening** | core dump disable, ptrace detect, env sanitize | Same + LD_PRELOAD/DYLD clear | Equivalent |
-| **Shell Escalation** | sandbox/escalate/deny 3-tier | sandbox/escalate/deny | Equivalent |
-| **Network Policy** | Domain allowlist/denylist, 3 modes, audit log | HTTP+SOCKS5 proxy, MITM HTTPS | Codex has MITM; LegnaCode has audit log |
-| **Secret Detection** | Regex patterns (AWS/GitHub/JWT/Slack/etc) + auto-redact | Phase-based with dedup | LegnaCode integrated into memory pipeline |
-| **Memory** | 4-layer stack + vector search + SQLite + knowledge graph | 2-phase rollout + SQLite + watermark | LegnaCode richer (TF-IDF, temporal graph) |
-| **Collaboration Modes** | 4 built-in (default/plan/execute/pair) + custom `.md` | 4 modes (default/plan/execute/pair) | Equivalent; LegnaCode templated + extensible |
-| **JS REPL** | Public with `legnacode` bridge object | Persistent Node kernel with `codex.tool()` | Both bridge tool calls; LegnaCode public |
-| **IDE Protocol** | JSON-RPC 2.0 (stdio + WebSocket) | JSON-RPC 2.0 (stdio + WebSocket) | Equivalent |
-| **Multi-Agent** | Coordinator + TeamCreate + SendMessage + tmux | spawn/send/wait/close + AgentRegistry | LegnaCode has tmux integration |
-| **Voice** | STT (voice_stream) + TTS (native/API) + WebRTC | WebRTC + WebSocket realtime | Both bidirectional; different backends |
-| **Multi-Model** | OpenAI compat + Bedrock + Vertex + MiniMax + custom | OpenAI + Bedrock + Ollama + LM Studio | LegnaCode has MiniMax multimodal |
-| **MCP** | Client + Server (`legnacode mcp-server`) | Client + Server (`codex mcp-server`) | Equivalent |
-| **Hooks** | 6 lifecycle events | 6 lifecycle events | Equivalent |
-| **Skills** | SKILL.md (YAML frontmatter) + Codex compat | SKILL.md (YAML frontmatter) | LegnaCode reads both formats |
-| **Plugin System** | Marketplace + Codex plugin adapter | `.codex-plugin/plugin.json` | LegnaCode auto-converts Codex plugins |
-| **Config Compat** | Reads `~/.codex/config.toml` auto-import | Native TOML config | LegnaCode bidirectional mapping |
-| **SDK** | TypeScript + Python (with `Codex` alias) | TypeScript + Python | LegnaCode provides migration aliases |
-| **Multimodal Tools** | 6 MiniMax tools (image/video/speech/music/vision/search) | None | LegnaCode exclusive |
-| **Rollback** | Full implementation (timeline, dry-run, safe mode) | Built-in | Both functional |
-| **Performance** | Rust NAPI (cosine/tfidf/hash/tokens) + TS fallback | Full Rust (70+ crates) | Codex all-Rust; LegnaCode hybrid |
-| **Platform** | macOS + Linux + Windows (prebuilt binaries) | macOS + Linux + Windows | Equivalent |
+> LegnaCode v1.8.0 fully integrates Codex CLI capabilities while maintaining its own advantages. Features marked with `[Codex]` originated from the Codex fusion roadmap.
+
+## Security
+
+| Feature | Codex CLI | LegnaCode |
+|---------|:---------:|:---------:|
+| Kernel-level sandbox | ✅ Seatbelt + bwrap + seccomp + Landlock | ✅ `[Codex]` Seatbelt + seccomp + container fallback |
+| Static exec policy | ✅ Starlark-like DSL | ✅ `[Codex]` TOML rules (prefix/glob/regex) |
+| Auto-approval agent | ✅ codex-auto-review model | ✅ `[Codex]` Guardian sub-agent (6-category risk taxonomy) |
+| Process hardening | ✅ core dump + ptrace + env sanitize | ✅ `[Codex]` Equivalent |
+| Shell escalation protocol | ✅ sandbox/escalate/deny | ✅ `[Codex]` sandbox/escalate/deny 3-tier |
+| Network policy | ✅ HTTP+SOCKS5 proxy, MITM HTTPS | ✅ `[Codex]` Domain allowlist/denylist, 3 modes, audit log |
+| Secret detection | ✅ Phase-based with dedup | ✅ `[Codex]` Regex patterns + auto-redact in memory pipeline |
+
+## Memory & Context
+
+| Feature | Codex CLI | LegnaCode |
+|---------|:---------:|:---------:|
+| Memory system | ✅ 2-phase rollout + SQLite + watermark | ✅ 4-layer stack + vector search + SQLite + knowledge graph |
+| Cross-session search | ❌ | ✅ `/recall` command |
+| Temporal knowledge graph | ❌ | ✅ Entity-relation + time-validity queries |
+| Content tiering | ❌ | ✅ L0/L1/L2 budget-driven degradation |
+| Token ROI ranking | ❌ | ✅ `[Codex]` Recall-to-cost ratio ranking |
+| Two-pass wake-up | ❌ | ✅ `[Codex]` Greedy L1 + L0 backfill |
+
+## Collaboration & Interaction
+
+| Feature | Codex CLI | LegnaCode |
+|---------|:---------:|:---------:|
+| Collaboration modes | ✅ default/plan/execute/pair | ✅ `[Codex]` 4 built-in + custom `.md` templates |
+| JS REPL | ✅ Persistent Node kernel + `codex.tool()` | ✅ `[Codex]` Public with `legnacode` bridge object |
+| IDE protocol | ✅ JSON-RPC 2.0 (stdio + WebSocket) | ✅ `[Codex]` JSON-RPC 2.0 (stdio + WebSocket) |
+| Multi-agent | ✅ spawn/send/wait/close + AgentRegistry | ✅ Coordinator + TeamCreate + tmux integration |
+| Voice input | ✅ WebRTC + WebSocket realtime | ✅ STT (voice_stream) |
+| Voice output (TTS) | ❌ | ✅ `[Codex]` Native backend (macOS `say`, Linux `espeak`) |
+| WebRTC transport | ✅ | ✅ `[Codex]` Bidirectional audio transport |
+
+## Models & Backends
+
+| Feature | Codex CLI | LegnaCode |
+|---------|:---------:|:---------:|
+| OpenAI API | ✅ | ✅ Via OpenAI-compat bridge |
+| Anthropic API | ❌ | ✅ Native |
+| AWS Bedrock | ✅ | ✅ |
+| Ollama / LM Studio | ✅ | ✅ Via OpenAI-compat bridge |
+| MiniMax multimodal | ❌ | ✅ 6 native tools (image/video/speech/music/vision/search) |
+| Model adapter architecture | ❌ | ✅ 8 adapters (DeepSeek/GLM/Kimi/MiMo/MiniMax/Qwen/etc) |
+| Intelligent model routing | ❌ | ✅ Auto-selects model tier by prompt complexity |
+
+## Plugin & Skills
+
+| Feature | Codex CLI | LegnaCode |
+|---------|:---------:|:---------:|
+| Plugin system | ✅ `.codex-plugin/plugin.json` | ✅ Marketplace + `[Codex]` Codex plugin adapter |
+| Skills | ✅ SKILL.md (YAML frontmatter) | ✅ SKILL.md + `[Codex]` Codex format auto-discovery |
+| MCP | ✅ Client + Server | ✅ Client + Server |
+| Hooks | ✅ 6 lifecycle events | ✅ 6 lifecycle events |
+| Config migration | ❌ | ✅ `[Codex]` `/migrate` imports from Codex/Cursor/Copilot |
+
+## SDK
+
+| Feature | Codex CLI | LegnaCode |
+|---------|:---------:|:---------:|
+| TypeScript SDK | ✅ | ✅ `[Codex]` `@legna/legnacode-sdk` with `Codex` alias |
+| Python SDK | ✅ | ✅ `[Codex]` `legnacode-sdk` with `Codex` alias |
+| Structured output | ✅ | ✅ `[Codex]` JSON Schema + Zod support |
+
+## Performance & Platform
+
+| Feature | Codex CLI | LegnaCode |
+|---------|:---------:|:---------:|
+| Core language | Rust (70+ crates) | TypeScript + `[Codex]` Rust NAPI addon (optional) |
+| Native acceleration | ✅ Full Rust | ✅ `[Codex]` cosine/tfidf/hash/tokens (~10-50x with fallback) |
+| macOS arm64 / x64 | ✅ | ✅ |
+| Linux x64 / arm64 | ✅ | ✅ |
+| Windows x64 | ✅ | ✅ |
+| Rollback | ✅ Built-in | ✅ `[Codex]` Timeline + dry-run + safe mode |
+
+## Config Compatibility
+
+| Feature | Codex CLI | LegnaCode |
+|---------|:---------:|:---------:|
+| `~/.codex/config.toml` | ✅ Native | ✅ `[Codex]` Auto-import as fallback settings |
+| `~/.codex/skills/` | ✅ Native | ✅ `[Codex]` Auto-discovery |
+| Codex plugin format | ✅ Native | ✅ `[Codex]` Auto-convert to LegnaCode format |
+| Bidirectional export | ❌ | ✅ `[Codex]` Export LegnaCode config to Codex TOML |
+
+---
 
 ## Migration from Codex
 
@@ -39,8 +101,4 @@ legna migrate --agents
 legna
 ```
 
-LegnaCode automatically:
-- Reads `~/.codex/config.toml` as fallback settings
-- Discovers `~/.codex/skills/` and loads Codex-format skills
-- Detects `codex-plugin.json` in project directories
-- Provides `Codex` alias in TypeScript/Python SDK for drop-in replacement
+> LegnaCode automatically reads `~/.codex/config.toml`, discovers `~/.codex/skills/`, detects `codex-plugin.json` in project directories, and provides `Codex` alias in SDK for drop-in replacement.
