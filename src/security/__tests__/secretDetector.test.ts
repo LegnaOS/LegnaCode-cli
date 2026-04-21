@@ -19,7 +19,7 @@ describe('detectSecrets', () => {
   })
 
   it('detects Stripe secret key', () => {
-    const matches = detectSecrets('sk_live_" + "abcdefghijklmnopqrstuv')
+    const matches = detectSecrets('sk_live_' + 'abcdefghijklmnopqrstuv')
     expect(matches).toHaveLength(1)
     expect(matches[0]!.type).toBe('stripe_key')
   })
@@ -37,7 +37,7 @@ describe('detectSecrets', () => {
   })
 
   it('detects Slack token', () => {
-    const matches = detectSecrets('xoxb-" + "123456789012-1234567890123-abcdefghijklmnopqrstuv')
+    const matches = detectSecrets('xoxb-' + '123456789012-1234567890123-abcdefghijklmnopqrstuv')
     expect(matches).toHaveLength(1)
     expect(matches[0]!.type).toBe('slack_token')
   })
