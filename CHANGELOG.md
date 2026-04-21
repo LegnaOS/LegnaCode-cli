@@ -28,7 +28,7 @@ All notable changes to LegnaCode CLI will be documented in this file.
 
 ### Features (Phase 3 + Phase 5)
 
-- **Collaboration Mode System** — Templated `.md` modes with YAML frontmatter. Built-in: `default`, `plan`, `execute`, `pair`. Three-tier loading (built-in → user → project). `/mode` command for runtime switching.
+- **Collaboration Mode System** — Templated `.md` modes with YAML frontmatter. Built-in: `default`, `plan`, `execute`, `pair`. Three-tier loading (built-in → user → project). Runtime switching via programmatic API (note: `/mode` slash command disabled in compiled binary due to Bun JIT limitation).
 - **JS REPL Bridge** — Public `legnacode` object in REPL scope: `tool()`, `readFile()`, `exec()`, `glob()`, `grep()`, `emitImage()`.
 - **App-Server JSON-RPC** — Full JSON-RPC 2.0 with 7 method groups (`thread/*`, `turn/*`, `fs/*`, `config/*`, `mcpServer/*`, `model/*`, `skills/*`). Streaming notifications. stdio + WebSocket transports.
 - **Agent Config Migration** — `/migrate` detects Codex, Cursor, Copilot, Windsurf, Aider, Continue. Imports config, MCP servers, rules.

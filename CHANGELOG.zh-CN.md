@@ -26,7 +26,7 @@ All notable changes to LegnaCode CLI will be documented in this file.
 
 ### 新功能（Phase 3 + Phase 5）
 
-- **协作模式系统** — 基于 YAML frontmatter 的 `.md` 模板化模式。内置：`default`、`plan`、`execute`、`pair`。三级加载（内置→用户→项目）。`/mode` 命令运行时切换。
+- **协作模式系统** — 基于 YAML frontmatter 的 `.md` 模板化模式。内置：`default`、`plan`、`execute`、`pair`。三级加载（内置→用户→项目）。通过编程 API 运行时切换（注：`/mode` 斜杠命令因 Bun JIT 限制在编译后二进制中禁用）。
 - **JS REPL Bridge** — REPL 全局作用域注入 `legnacode` 对象：`tool()`、`readFile()`、`exec()`、`glob()`、`grep()`、`emitImage()`。
 - **App-Server JSON-RPC** — 完整 JSON-RPC 2.0，7 组方法（`thread/*`、`turn/*`、`fs/*`、`config/*`、`mcpServer/*`、`model/*`、`skills/*`）。流式通知。stdio + WebSocket 传输。
 - **外部代理配置迁移** — `/migrate` 检测 Codex、Cursor、Copilot、Windsurf、Aider、Continue。导入配置、MCP 服务器、规则。
