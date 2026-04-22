@@ -4,6 +4,18 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
+## [1.8.3] - 2026-04-22
+
+### Features
+
+- **GitHub Actions Release Workflow** — 4-stage CI pipeline: prepare (bump + webui) → native (Rust addons on 4 platform runners) → compile (7 Bun cross-compile targets) → publish (npm). Trigger via `v*` tag push or manual `workflow_dispatch`.
+- **Cross-Platform Rust Native Addons** — CI builds `sandbox`, `file-search`, `apply-patch` NAPI addons for darwin-arm64, darwin-x64, linux-x64, linux-arm64 using native runners.
+- **compile.ts --target flag** — Support cross-compilation target override for CI usage.
+
+### Bug Fixes
+
+- **OML Agent Type Mismatch** — Fixed `agent` field in OML skill definitions passing an object `{ type, model }` instead of a string. Caused all 19 OML agent skills to silently fallback to `general-purpose` in fork mode.
+
 ## [1.8.2] - 2026-04-22
 
 ### Bug Fixes

@@ -4,7 +4,7 @@
 
 **An AI-powered terminal programming assistant, supercharged.**
 
-[![version](https://img.shields.io/badge/version-1.8.2-blue)](./CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-1.8.3-blue)](./CHANGELOG.md)
 [![platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Linux%20%7C%20Windows-brightgreen)](#platform-support)
 [![license](https://img.shields.io/badge/license-MIT-yellow)](./LICENSE)
 [![Claude Code](https://img.shields.io/badge/based%20on-Claude%20Code-blueviolet)](https://github.com/anthropics/claude-code)
@@ -34,6 +34,7 @@ LegnaCode is built on top of [Claude Code CLI](https://github.com/anthropics/cla
 
 | Version | Summary |
 |---------|---------|
+| **1.8.3** | GitHub Actions CI release workflow; OML agent type fix; cross-platform Rust native addon builds |
 | **1.8.2** | Null-guard fixes for message pipeline crashes; Rust native addons (sandbox/file-search/apply-patch) for darwin-arm64 |
 | **1.8.0** | Codex full compat: plugin adapter + marketplace, skills discovery, config interop; TS/Python SDK; TTS + WebRTC voice |
 | **1.6.1** | Rust NAPI addon (cosine/tfidf/hash/tokens); kernel sandbox (Seatbelt/seccomp); two-pass wake-up; keyword-density L1 |

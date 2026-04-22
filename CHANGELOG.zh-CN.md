@@ -2,6 +2,18 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
+## [1.8.3] - 2026-04-22
+
+### 新功能
+
+- **GitHub Actions 自动发版工作流** — 4 阶段 CI 流水线：prepare（bump + webui）→ native（4 平台 Rust addon 编译）→ compile（7 个 Bun 交叉编译目标）→ publish（npm 发布）。通过 `v*` tag 推送或手动 `workflow_dispatch` 触发。
+- **全平台 Rust Native Addon** — CI 在原生 runner 上编译 `sandbox`、`file-search`、`apply-patch` NAPI 插件，覆盖 darwin-arm64、darwin-x64、linux-x64、linux-arm64。
+- **compile.ts --target 参数** — 支持交叉编译目标覆盖，供 CI 使用。
+
+### 修复
+
+- **OML Agent 类型不匹配** — 修复 OML 技能定义中 `agent` 字段传递对象 `{ type, model }` 而非字符串的问题。导致 19 个 OML agent 技能在 fork 模式下静默回退到 `general-purpose`。
+
 ## [1.8.2] - 2026-04-22
 
 ### 修复
