@@ -4,6 +4,12 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
+## [1.8.4] - 2026-04-22
+
+### Bug Fixes
+
+- **Session Transcript Null Guard** — Added defensive null/type checks to `isLoggableMessage`, `collectReplIds`, and `transformMessagesForExternalTranscript` in `src/utils/sessionStorage.ts`. Prevents `m4 is not an Object (evaluating '"isVirtual" in m4')` crash when the messages array contains undefined/null elements during React effect processing in `useLogMessages`.
+
 ## [1.8.3] - 2026-04-22
 
 ### Features

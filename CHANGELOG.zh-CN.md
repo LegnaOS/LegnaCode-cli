@@ -2,6 +2,12 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
+## [1.8.4] - 2026-04-22
+
+### 修复
+
+- **会话转录空值守卫** — 为 `src/utils/sessionStorage.ts` 中 `isLoggableMessage`、`collectReplIds`、`transformMessagesForExternalTranscript` 添加防御性空值/类型检查。修复消息数组包含 undefined/null 元素时 `useLogMessages` React effect 中 `m4 is not an Object (evaluating '"isVirtual" in m4')` 崩溃。
+
 ## [1.8.3] - 2026-04-22
 
 ### 新功能

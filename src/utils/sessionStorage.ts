@@ -4386,6 +4386,7 @@ export async function loadAllSubagentTranscriptsFromDisk(): Promise<{
 // Exported so useLogMessages can sync-compute the last loggable uuid
 // without awaiting recordTranscript's return value (race-free hint tracking).
 export function isLoggableMessage(m: Message): boolean {
+  if (m == null || typeof m !== 'object') return false
   if (m.type === 'progress') return false
   // IMPORTANT: We deliberately filter out most attachments for non-ants because
   // they have sensitive info for training that we don't want exposed to the public.
@@ -4406,6 +4407,7 @@ export function isLoggableMessage(m: Message): boolean {
 function collectReplIds(messages: readonly Message[]): Set<string> {
   const ids = new Set<string>()
   for (const m of messages) {
+    if (m == null || typeof m !== 'object') continue
     if (m.type === 'assistant' && Array.isArray(m.message.content)) {
       for (const b of m.message.content) {
         if (b.type === 'tool_use' && b.name === REPL_TOOL_NAME) {
@@ -4435,6 +4437,7 @@ function transformMessagesForExternalTranscript(
   replIds: Set<string>,
 ): Transcript {
   return messages.flatMap(m => {
+    if (m == null || typeof m !== 'object') return []
     if (m.type === 'assistant' && Array.isArray(m.message.content)) {
       const content = m.message.content
       const hasRepl = content.some(
