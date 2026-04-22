@@ -1,5 +1,27 @@
 # LegnaCode 项目记忆
 
+## 发版流程（CI 自动化）
+
+用户说"打包"或"发版"时，执行以下步骤：
+
+```bash
+bun run scripts/bump.ts <版本号>
+git add -A && git commit -m "v<版本号>"
+git tag v<版本号>
+git push origin main --tags
+```
+
+GitHub Actions 自动完成：
+- 4 个平台 runner 并行编译 Rust native addon（darwin-arm64/x64, linux-x64/arm64）
+- 7 个 Bun 交叉编译（darwin/linux/win32 × arm64/x64 + baseline）
+- 全部打包发布到 npm
+
+不再需要手动跑 `compile-all.ts`、`npm publish` 或换机器编译。
+
+同时记得更新：
+- `README.md` / `README.zh-CN.md` — 版本徽章 + 更新日志表
+- `CHANGELOG.md` / `CHANGELOG.zh-CN.md` — 新版本条目
+
 ## 发版铁律
 
 每次发版必须同步更新以下所有位置的版本号，缺一不可：

@@ -32,6 +32,9 @@ npm-debug.log*
 .npm-packages/
 .compile-tmp/
 
+# Rust build cache
+native/target/
+
 # Augment RAG index (generated)
 .augment-rag/
 
