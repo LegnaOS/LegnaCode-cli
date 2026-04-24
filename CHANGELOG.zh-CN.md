@@ -2,7 +2,7 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
-## [1.9.1] - 2026-04-25
+## [1.9.2] - 2026-04-25
 
 ### 新功能
 

@@ -4,7 +4,7 @@
 
 **An AI-powered terminal programming assistant, supercharged.**
 
-[![version](https://img.shields.io/badge/version-1.9.1-blue)](./CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-1.9.2-blue)](./CHANGELOG.md)
 [![platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Linux%20%7C%20Windows-brightgreen)](#platform-support)
 [![license](https://img.shields.io/badge/license-MIT-yellow)](./LICENSE)
 [![Claude Code](https://img.shields.io/badge/based%20on-Claude%20Code-blueviolet)](https://github.com/anthropics/claude-code)
@@ -34,7 +34,7 @@ LegnaCode is built on top of [Claude Code CLI](https://github.com/anthropics/cla
 
 | Version | Summary |
 |---------|---------|
-| **1.9.1** | Computer Use Python bridge (macOS + Windows); auto Python 3.12+ venv setup; feature gate removal for Computer Use |
+| **1.9.2** | Computer Use Python bridge (macOS + Windows); auto Python 3.12+ venv setup; feature gate removal for Computer Use |
 | **1.9.0** | Portable sessions (relative cwd); WebUI overhaul (project browser, memory editor, force-directed graph); full project migration (sessions + subagents + memory + skills + agents + rules + MCP config); profile switching via pointer file |
 | **1.8.5** | Token optimization: compress tool prompts (BashTool/AgentTool/TodoWrite/EnterPlanMode); fix cache_control for Kimi/MiniMax/MiMo adapters |
 
