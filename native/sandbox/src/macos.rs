@@ -15,46 +15,17 @@ pub fn is_available() -> bool {
 }
 
 /// Generate a Seatbelt profile string from config.
+///
+/// Strategy: allow everything by default, only deny dangerous operations.
+/// The primary goal is preventing `rm -rf /` style destructive commands
+/// while letting normal shell operations work without friction.
 fn generate_profile(config: &SandboxConfig) -> String {
     let mut profile = String::from("(version 1)\n");
 
-    // Default deny
-    profile.push_str("(deny default)\n");
+    // Default allow — no more exit code 65 for normal commands
+    profile.push_str("(allow default)\n");
 
-    // Allow basic process operations
-    profile.push_str("(allow process-exec)\n");
-    profile.push_str("(allow process-fork)\n");
-    profile.push_str("(allow sysctl-read)\n");
-    profile.push_str("(allow mach-lookup)\n");
-    profile.push_str("(allow signal)\n");
-    profile.push_str("(allow ipc-posix-shm-read-data)\n");
-
-    // File read
-    if config.readable_paths.iter().any(|p| p == "*") {
-        profile.push_str("(allow file-read*)\n");
-    } else {
-        for path in &config.readable_paths {
-            profile.push_str(&format!(
-                "(allow file-read* (subpath \"{path}\"))\n"
-            ));
-        }
-    }
-
-    // File write
-    if config.writable_paths.iter().any(|p| p == "*") {
-        profile.push_str("(allow file-write*)\n");
-    } else {
-        for path in &config.writable_paths {
-            profile.push_str(&format!(
-                "(allow file-write* (subpath \"{path}\"))\n"
-            ));
-        }
-        // Always allow /tmp writes
-        profile.push_str("(allow file-write* (subpath \"/tmp\"))\n");
-        profile.push_str("(allow file-write* (subpath \"/private/tmp\"))\n");
-    }
-
-    // Protected paths — deny write
+    // Protected paths — deny write (e.g. system dirs, user-specified paths)
     if let Some(ref protected) = config.protected_paths {
         for path in protected {
             let expanded = if path.starts_with('~') {
@@ -72,18 +43,22 @@ fn generate_profile(config: &SandboxConfig) -> String {
         }
     }
 
-    // Network
+    // Always protect critical system paths from writes
+    profile.push_str("(deny file-write* (subpath \"/System\"))\n");
+    profile.push_str("(deny file-write* (subpath \"/usr\"))\n");
+    profile.push_str("(deny file-write* (subpath \"/bin\"))\n");
+    profile.push_str("(deny file-write* (subpath \"/sbin\"))\n");
+
+    // Network policy — only restrict if explicitly blocked
     match config.network_policy.as_str() {
-        "full" => {
-            profile.push_str("(allow network*)\n");
+        "blocked" => {
+            profile.push_str("(deny network*)\n");
         }
         "limited" => {
-            profile.push_str("(allow network-outbound)\n");
             profile.push_str("(deny network-bind)\n");
         }
         _ => {
-            // blocked — deny all network
-            profile.push_str("(deny network*)\n");
+            // "full" or default — already allowed by (allow default)
         }
     }
 
