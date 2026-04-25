@@ -1,6 +1,6 @@
 {
   "name": "@legna-lnc/legnacode",
-  "version": "1.9.3",
+  "version": "1.9.4",
   "description": "LegnaCode — legna.lnc's official CLI for coding assistance",
   "type": "module",
   "bin": {
@@ -142,13 +142,13 @@
     "bun": ">=1.2.0"
   },
   "optionalDependencies": {
-    "@legna-lnc/legnacode-darwin-arm64": "1.9.3",
-    "@legna-lnc/legnacode-darwin-x64": "1.9.3",
-    "@legna-lnc/legnacode-darwin-x64-baseline": "1.9.3",
-    "@legna-lnc/legnacode-linux-x64": "1.9.3",
-    "@legna-lnc/legnacode-linux-x64-baseline": "1.9.3",
-    "@legna-lnc/legnacode-linux-arm64": "1.9.3",
-    "@legna-lnc/legnacode-win32-x64": "1.9.3",
-    "@legna-lnc/legnacode-win32-ia32": "1.9.3"
+    "@legna-lnc/legnacode-darwin-arm64": "1.9.4",
+    "@legna-lnc/legnacode-darwin-x64": "1.9.4",
+    "@legna-lnc/legnacode-darwin-x64-baseline": "1.9.4",
+    "@legna-lnc/legnacode-linux-x64": "1.9.4",
+    "@legna-lnc/legnacode-linux-x64-baseline": "1.9.4",
+    "@legna-lnc/legnacode-linux-arm64": "1.9.4",
+    "@legna-lnc/legnacode-win32-x64": "1.9.4",
+    "@legna-lnc/legnacode-win32-ia32": "1.9.4"
   }
 }

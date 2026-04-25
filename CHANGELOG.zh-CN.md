@@ -2,6 +2,13 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
+## [1.9.4] - 2026-04-25
+
+### 修复
+
+- **macOS Seatbelt 沙盒重写** — 将 `(deny default)` 替换为 `(allow default)` 策略。沙盒现在仅拒绝对关键系统路径（`/System`、`/usr`、`/bin`、`/sbin`）和用户配置的 `protected_paths` 的写入。普通 shell 命令不再受阻——彻底消除 exit code 65。
+- **Shell.ts 沙盒返回路径** — 恢复了 v1.9.3 中意外删除的沙盒成功执行返回语句，该问题导致命令跳过沙盒结果并重新以无沙盒方式执行。
+
 ## [1.9.3] - 2026-04-25
 
 ### 新功能

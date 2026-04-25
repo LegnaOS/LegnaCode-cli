@@ -4,6 +4,13 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
+## [1.9.4] - 2026-04-25
+
+### Fixes
+
+- **macOS Seatbelt Sandbox Rewrite** — Replaced `(deny default)` with `(allow default)` strategy. The sandbox now only denies writes to critical system paths (`/System`, `/usr`, `/bin`, `/sbin`) and user-configured `protected_paths`. Normal shell commands work without friction — no more exit code 65.
+- **Shell.ts Sandbox Return Path** — Restored the return statement for successful sandbox execution that was accidentally removed in v1.9.3, which caused commands to fall through and re-execute unsandboxed.
+
 ## [1.9.3] - 2026-04-25
 
 ### Features
