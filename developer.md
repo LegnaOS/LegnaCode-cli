@@ -541,6 +541,80 @@ interface LoadedPlugin {
 
 ---
 
+## 模型适配器与 OpenAI 路由
+
+### 架构
+
+```
+paramsFromContext() → applyModelAdapter() → [分叉点]
+  ├─ __openaiCompat: false → anthropic.beta.messages.create() (Anthropic SDK)
+  └─ __openaiCompat: true  → openAIStreamingRequest() (fetch 桥接)
+                                ├─ anthropicToOpenAI(params) → 构建请求
+                                └─ OpenAI SSE → 转换为 Anthropic 事件
+```
+
+内部消息格式始终为 Anthropic。会话存储、工具执行、skills、memory 全部不变。格式转换仅在 API 边界发生。
+
+### 适配器接口
+
+`src/utils/model/adapters/` 下每个适配器实现：
+
+```typescript
+interface ModelAdapter {
+  name: string
+  apiFormat?: 'anthropic' | 'openai' | 'auto'  // 默认: 'anthropic'
+  match(model: string, baseUrl?: string): boolean
+  transformParams(params: Record<string, any>): Record<string, any>
+  transformResponse?(content: any[]): any[] | null
+  getStopReasonMessage?(stopReason: string): string | undefined
+}
+```
+
+`apiFormat: 'auto'` 根据 `ANTHROPIC_BASE_URL` 自动推断：`/anthropic` 后缀走 Anthropic SDK，否则走 OpenAI fetch 桥接。
+
+### 已注册适配器（优先级顺序）
+
+| 适配器 | 厂商 | apiFormat | 关键特性 |
+|--------|------|-----------|---------|
+| OpenAICompatAdapter | 任意 OpenAI 端点 | openai | 通过 `OPENAI_COMPAT_BASE_URL` 环境变量激活 |
+| MiMoAdapter | 小米 | auto | mimo-v2.5-pro/v2.5，Token Plan 主机 |
+| GLMAdapter | 智谱 | auto | glm-5.1 到 glm-4.5，Coding Plan，cached_tokens |
+| DeepSeekAdapter | DeepSeek | auto | v4-flash/v4-pro，reasoning_content 回传 |
+| KimiAdapter | 月之暗面 | auto | kimi-k2.6 thinking，Preserved Thinking |
+| MiniMaxAdapter | MiniMax | auto | reasoning_details 数组，中国/全球主机 |
+| QwenAdapter | 阿里云 | auto | 百炼北京/新加坡/Coding Plan |
+
+### OpenAI 流式桥接
+
+`src/services/api/openaiStreamBridge.ts` 将 OpenAI SSE 转换为 Anthropic 事件：
+
+- `delta.content` → `content_block_delta` (text_delta)
+- `delta.tool_calls` → `content_block_start` (tool_use) + `content_block_delta` (input_json_delta)
+- `delta.reasoning_content` → `content_block_delta` (thinking_delta) — DeepSeek/Kimi/MiMo
+- `delta.reasoning_details` → `content_block_delta` (thinking_delta) — MiniMax
+- `finish_reason` 映射：stop→end_turn, tool_calls→tool_use, length→max_tokens, sensitive→content_filter
+
+### 共享工具 (`src/utils/model/adapters/shared.ts`)
+
+- `simplifyThinking` — 仅 `{type: "enabled"}`，无 budget_tokens
+- `forceAutoToolChoice` — 删除 `disable_parallel_tool_use`
+- `normalizeTools` / `normalizeToolsKeepCache` — 设置 `type: "custom"`
+- `stripUnsupportedContentBlocks` — 过滤 image/document/redacted_thinking
+- `stripUnsupportedFields` — 保留 `output_config.effort`
+- `stripReasoningContent` — 从 assistant 消息中移除 reasoning（Anthropic 路径）
+- `reorderThinkingBlocks` — 响应中 thinking 排在 text 前面
+
+### 配置
+
+settings.json `apiFormat` 字段：
+- `"anthropic"` — 强制走 Anthropic SDK
+- `"openai"` — 强制走 OpenAI fetch 桥接
+- 省略 — 使用适配器的 `apiFormat` 声明（默认：根据 URL 自动检测）
+
+Admin WebUI：设置面板 → "API 路由模式"下拉框。
+
+---
+
 ## MCP 集成
 
 MCP (Model Context Protocol) 深度集成在 `src/services/mcp/`。

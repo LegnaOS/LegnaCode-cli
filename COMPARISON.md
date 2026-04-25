@@ -24,10 +24,15 @@
 | GCP Vertex | ✅ | ✅ |
 | Azure OpenAI | ❌ | ✅ |
 | MiniMax deep native integration | ❌ | ✅ 6 multimodal tools auto-registered |
-| OpenAI-compatible bridge | ❌ | ✅ Any `/v1/chat/completions` endpoint (Ollama/vLLM/LM Studio) |
-| DeepSeek / Qwen / GLM / SiliconFlow | ❌ | ✅ Via OpenAI-compat bridge + dedicated adapters |
+| OpenAI-compatible bridge | ❌ | ✅ Full streaming bridge with SSE→Anthropic event translation |
+| Auto API format detection | ❌ | ✅ URL-based: `/anthropic` suffix → Anthropic SDK, else → OpenAI fetch |
+| `apiFormat` setting | ❌ | ✅ Force Anthropic or OpenAI per profile, or auto-detect |
+| DeepSeek / Qwen / GLM / Kimi / MiMo | ❌ | ✅ 7 dedicated adapters, dual-endpoint (Anthropic + OpenAI) |
+| reasoning_content passback | ❌ | ✅ Auto-extracts thinking blocks for DeepSeek/Kimi/MiMo multi-turn |
+| MiniMax reasoning_details | ❌ | ✅ Array format thinking content in OpenAI streaming |
+| Provider-specific finish_reason | ❌ | ✅ sensitive (GLM), repetition_truncation (MiMo), content_filter |
 | Intelligent model routing | ❌ | ✅ Auto-selects model tier by prompt complexity |
-| Model Adapter architecture | Partial | ✅ 8 adapters (DeepSeek/GLM/Kimi/MiMo/MiniMax/Qwen/OpenAI-compat) |
+| Model Adapter architecture | Partial | ✅ 7 adapters + OpenAI-compat bridge, per-adapter apiFormat |
 | JSON repair for weak models | ❌ | ✅ Fixes markdown fences, trailing commas, unbalanced brackets |
 
 ## Multimodal (MiniMax-exclusive)

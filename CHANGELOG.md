@@ -4,6 +4,36 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
+## [1.9.3] - 2026-04-25
+
+### Features
+
+- **OpenAI-Compatible API Routing** — New `apiFormat` setting ('anthropic' | 'openai' | auto) enables routing requests through OpenAI Chat Completions API instead of Anthropic Messages API. Per-adapter `apiFormat: 'auto'` auto-detects from base URL: `/anthropic` suffix → Anthropic SDK, otherwise → OpenAI fetch bridge. All 6 CN adapters default to auto.
+- **OpenAI Streaming Bridge** — New `openaiStreamBridge.ts` translates OpenAI SSE stream into Anthropic event format. Handles `delta.content`, `delta.tool_calls`, `delta.reasoning_content` (DeepSeek/Kimi/MiMo), `delta.reasoning_details` (MiniMax). Downstream code (tool execution, session storage) sees identical events — zero changes needed.
+- **Admin Profile Clone** — New "复制" button on each profile card in admin WebUI. Inline form with auto-prefixed `settings-` and `.json` suffix. Backend: `POST /api/:scope/profiles/clone`.
+- **Admin API Route Selector** — Settings panel now shows "API 路由模式" dropdown: Auto (URL-based), Anthropic, or OpenAI.
+
+### Improvements
+
+- **Deep Adapter Alignment** — All 7 adapters (DeepSeek, MiniMax, Qwen, GLM, Kimi, MiMo, OpenAICompat) updated per official API docs:
+  - DeepSeek: dual endpoints, model list (v4-flash/v4-pro), `output_config.effort` preserved, `reasoning_content` passback
+  - MiniMax: dual endpoints (China/Global + Token Plan), `reasoning_details` array format, `stripUnsupportedContentBlocks`
+  - Qwen/DashScope: Beijing/Singapore/Coding Plan URLs, `coding.dashscope.aliyuncs.com` host, qwen3.6-* prefix
+  - GLM/ZhipuAI: OpenAI + Anthropic + Coding Plan URLs, `sensitive`/`network_error`/`model_context_window_exceeded` finish reasons, `cached_tokens` support
+  - Kimi/Moonshot: kimi-k2.6 (thinking, immutable temp/top_p), `moonshot-v1-*` prefix, Preserved Thinking (`thinking.keep: "all"`)
+  - MiMo/Xiaomi: mimo-v2.5-pro/v2.5 models, Token Plan host, `repetition_truncation` finish reason
+- **OpenAI SDK Type Alignment** — Reviewed OpenAI SDK v6.34.0 types: `Delta.ToolCall.index` required, `Delta.content` nullable, `function_call` deprecated finish reason, `stream_options.include_usage`, `Delta.refusal` handling.
+- **Shared Adapter Utilities** — `stripUnsupportedContentBlocks` filters image/document/server_tool_use/redacted_thinking. `forceAutoToolChoice` strips `disable_parallel_tool_use`. `stripUnsupportedFields` preserves `output_config.effort`.
+- **API Key Resolution** — OpenAI bridge now uses `getAnthropicApiKey()` unified auth path (settings.json → env → keychain) instead of raw `process.env`.
+
+### Fixes
+
+- **Bash Exit Code 65** — macOS Seatbelt sandbox returns exit code 65 due to overly restrictive profile. `Shell.ts` now detects this and falls through to unsandboxed spawn path.
+- **Admin Settings Profile** — `GET/PUT /api/:scope/settings` now reads/writes the active profile file (via `getActiveProfile()`) instead of hardcoded `settings.json`.
+- **Design Prompt False Positives** — Narrowed Chinese keyword detection for design prompt injection. Replaced broad single-character words (界面, 组件, 页面) with compound terms (前端开发, UI组件, 页面设计).
+- **Computer Use Auto-Enable** — Removed `DEFAULT_DISABLED_BUILTIN` whitelist that required manual opt-in via `enabledMcpServers`.
+- **reasoning_content Passback** — DeepSeek/Kimi OpenAI endpoints require `reasoning_content` from thinking mode to be passed back. `convertAnthropicToOpenAI` now extracts thinking blocks and sets them on assistant messages.
+
 ## [1.9.2] - 2026-04-25
 
 ### Features

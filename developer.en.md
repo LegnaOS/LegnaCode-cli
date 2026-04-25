@@ -541,6 +541,80 @@ Built-in plugins use `{name}@builtin` identifiers and can be enabled/disabled vi
 
 ---
 
+## Model Adapters & OpenAI Routing
+
+### Architecture
+
+```
+paramsFromContext() → applyModelAdapter() → [fork point]
+  ├─ __openaiCompat: false → anthropic.beta.messages.create() (Anthropic SDK)
+  └─ __openaiCompat: true  → openAIStreamingRequest() (fetch-based)
+                                ├─ anthropicToOpenAI(params) → build request
+                                └─ OpenAI SSE → convert to Anthropic events
+```
+
+Internal message format is always Anthropic. Session storage, tool execution, skills, memory — all unchanged. Format conversion happens only at the API boundary.
+
+### Adapter Interface
+
+Each adapter in `src/utils/model/adapters/` implements:
+
+```typescript
+interface ModelAdapter {
+  name: string
+  apiFormat?: 'anthropic' | 'openai' | 'auto'  // default: 'anthropic'
+  match(model: string, baseUrl?: string): boolean
+  transformParams(params: Record<string, any>): Record<string, any>
+  transformResponse?(content: any[]): any[] | null
+  getStopReasonMessage?(stopReason: string): string | undefined
+}
+```
+
+`apiFormat: 'auto'` detects from `ANTHROPIC_BASE_URL`: `/anthropic` suffix → Anthropic SDK, otherwise → OpenAI fetch bridge.
+
+### Registered Adapters (priority order)
+
+| Adapter | Provider | apiFormat | Key Features |
+|---------|----------|-----------|-------------|
+| OpenAICompatAdapter | Any OpenAI endpoint | openai | Activated by `OPENAI_COMPAT_BASE_URL` env |
+| MiMoAdapter | Xiaomi | auto | mimo-v2.5-pro/v2.5, Token Plan host |
+| GLMAdapter | ZhipuAI | auto | glm-5.1 to glm-4.5, Coding Plan, cached_tokens |
+| DeepSeekAdapter | DeepSeek | auto | v4-flash/v4-pro, reasoning_content passback |
+| KimiAdapter | Moonshot | auto | kimi-k2.6 thinking, Preserved Thinking |
+| MiniMaxAdapter | MiniMax | auto | reasoning_details array, China/Global hosts |
+| QwenAdapter | Alibaba | auto | DashScope Beijing/Singapore/Coding Plan |
+
+### OpenAI Streaming Bridge
+
+`src/services/api/openaiStreamBridge.ts` converts OpenAI SSE to Anthropic events:
+
+- `delta.content` → `content_block_delta` (text_delta)
+- `delta.tool_calls` → `content_block_start` (tool_use) + `content_block_delta` (input_json_delta)
+- `delta.reasoning_content` → `content_block_delta` (thinking_delta) — DeepSeek/Kimi/MiMo
+- `delta.reasoning_details` → `content_block_delta` (thinking_delta) — MiniMax
+- `finish_reason` mapping: stop→end_turn, tool_calls→tool_use, length→max_tokens, sensitive→content_filter
+
+### Shared Utilities (`src/utils/model/adapters/shared.ts`)
+
+- `simplifyThinking` — `{type: "enabled"}` only, no budget_tokens
+- `forceAutoToolChoice` — strips `disable_parallel_tool_use`
+- `normalizeTools` / `normalizeToolsKeepCache` — sets `type: "custom"`
+- `stripUnsupportedContentBlocks` — filters image/document/redacted_thinking
+- `stripUnsupportedFields` — preserves `output_config.effort`
+- `stripReasoningContent` — removes reasoning from assistant messages (Anthropic path)
+- `reorderThinkingBlocks` — thinking before text in response
+
+### Configuration
+
+Settings.json `apiFormat` field:
+- `"anthropic"` — force Anthropic SDK path
+- `"openai"` — force OpenAI fetch bridge
+- omitted — use adapter's `apiFormat` declaration (default: auto-detect from URL)
+
+Admin WebUI: Settings panel → "API 路由模式" dropdown.
+
+---
+
 ## MCP Integration
 
 MCP (Model Context Protocol) is deeply integrated in `src/services/mcp/`.
