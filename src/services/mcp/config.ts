@@ -1504,19 +1504,14 @@ export function areMcpConfigsAllowedWithEnterpriseMcpConfig(
 }
 
 /**
- * Built-in MCP server that defaults to disabled. Unlike user-configured servers
- * (opt-out via disabledMcpServers), this requires explicit opt-in via
- * enabledMcpServers. Shows up in /mcp as disabled until the user enables it.
+ * Built-in MCP servers are now enabled by default — no opt-in required.
+ * The original upstream design required explicit enabledMcpServers entry
+ * for computer-use; LegnaCode treats it like any other MCP server.
  */
-/* eslint-disable @typescript-eslint/no-require-imports */
-const DEFAULT_DISABLED_BUILTIN =
-  (
-    require('../../utils/computerUse/common.js') as typeof import('../../utils/computerUse/common.js')
-  ).COMPUTER_USE_MCP_SERVER_NAME
-/* eslint-enable @typescript-eslint/no-require-imports */
+const DEFAULT_DISABLED_BUILTIN: string | null = null
 
-function isDefaultDisabledBuiltin(name: string): boolean {
-  return DEFAULT_DISABLED_BUILTIN !== null && name === DEFAULT_DISABLED_BUILTIN
+function isDefaultDisabledBuiltin(_name: string): boolean {
+  return false
 }
 
 /**
