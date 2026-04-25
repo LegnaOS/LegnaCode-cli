@@ -13,6 +13,20 @@
 
 import type { ModelAdapter } from './index.js'
 
+// Lazy import to avoid circular dependency at module load time
+let _getApiKey: (() => string | null) | undefined
+function resolveApiKey(): string {
+  if (!_getApiKey) {
+    try {
+      const auth = require('../../auth.js')
+      _getApiKey = auth.getAnthropicApiKey
+    } catch {
+      _getApiKey = () => null
+    }
+  }
+  return _getApiKey!() || process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN || ''
+}
+
 // ── Message Format Translation ──────────────────────────────────────
 
 interface AnthropicMessage {
@@ -179,8 +193,7 @@ export function anthropicToOpenAI(params: Record<string, any>, options?: {
       || 'http://localhost:11434/v1'
   )
   const apiKey = options?.apiKey
-    || process.env.OPENAI_COMPAT_API_KEY
-    || process.env.ANTHROPIC_API_KEY
+    || resolveApiKey()
     || 'ollama'
 
   // Convert messages
