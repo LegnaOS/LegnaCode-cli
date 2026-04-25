@@ -435,6 +435,19 @@ function handleMigrate(body: any): Response {
         }
         writeFileSync(dstFile, JSON.stringify(dstData, null, 2) + '\n')
       }
+
+      // Auto-fill ANTHROPIC_MODEL from ANTHROPIC_DEFAULT_OPUS_MODEL if missing.
+      // Claude Code configs typically set OPUS_MODEL but not ANTHROPIC_MODEL.
+      // Without ANTHROPIC_MODEL, the CLI defaults to claude-opus-4-6 which
+      // fails on third-party providers.
+      try {
+        const dstData = JSON.parse(readFileSync(dstFile, 'utf-8'))
+        if (dstData.env && dstData.env.ANTHROPIC_DEFAULT_OPUS_MODEL && !dstData.env.ANTHROPIC_MODEL) {
+          dstData.env.ANTHROPIC_MODEL = dstData.env.ANTHROPIC_DEFAULT_OPUS_MODEL
+          writeFileSync(dstFile, JSON.stringify(dstData, null, 2) + '\n')
+          migrated.push('env.ANTHROPIC_MODEL (auto-filled from OPUS)')
+        }
+      } catch {}
     }
 
     // Migrate sessions (projects/ directory)
