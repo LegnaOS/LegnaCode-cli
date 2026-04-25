@@ -50,6 +50,7 @@ function mapFinishReason(reason: string | null): string {
     case 'stop': return 'end_turn'
     case 'length': return 'max_tokens'
     case 'tool_calls': return 'tool_use'
+    case 'function_call': return 'tool_use' // deprecated but some providers still use it
     case 'content_filter': return 'end_turn'
     default: return 'end_turn'
   }
@@ -67,6 +68,7 @@ export async function* openAIStreamingRequest(
 ): AsyncGenerator<any> {
   const { url, headers, body } = anthropicToOpenAI(params)
   body.stream = true
+  body.stream_options = { include_usage: true } // Request usage in final chunk
 
   const response = await fetch(url, {
     method: 'POST',
@@ -129,8 +131,14 @@ export async function* openAIStreamingRequest(
     const delta = choice.delta
     if (!delta) continue
 
+    // --- Refusal (OpenAI content filter) ---
+    if (delta.refusal != null && delta.refusal !== '') {
+      logForDebugging(`[openai-bridge] Model refusal: ${delta.refusal}`)
+    }
+
     // --- Reasoning/thinking content (DeepSeek, Kimi, Qwen) ---
-    if (delta.reasoning_content) {
+    // Non-standard field: some CN providers put thinking in reasoning_content
+    if (delta.reasoning_content != null && delta.reasoning_content !== '') {
       if (!thinkingBlockOpen) {
         yield {
           type: 'content_block_start',
@@ -146,8 +154,8 @@ export async function* openAIStreamingRequest(
       }
     }
 
-    // --- Text content ---
-    if (delta.content) {
+    // --- Text content (delta.content is string | null per OpenAI SDK) ---
+    if (delta.content != null && delta.content !== '') {
       // Close thinking block if transitioning to text
       if (thinkingBlockOpen) {
         yield { type: 'content_block_stop', index: contentBlockIndex }
@@ -184,7 +192,9 @@ export async function* openAIStreamingRequest(
       }
 
       for (const tc of delta.tool_calls) {
-        const tcIndex = tc.index ?? 0
+        // Per OpenAI SDK: Delta.ToolCall.index is required number,
+        // id/function.name are optional (only present on first chunk for each tool call)
+        const tcIndex: number = tc.index
 
         if (tc.id && tc.function?.name) {
           // New tool call
@@ -295,6 +305,11 @@ export async function openAINonStreamingRequest(
   const choice = data.choices?.[0]
   const message = choice?.message ?? {}
   const content: any[] = []
+
+  // Non-streaming: refusal field
+  if (message.refusal) {
+    content.push({ type: 'text', text: `[Refusal] ${message.refusal}` })
+  }
 
   // Text content
   if (message.content) {
