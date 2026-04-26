@@ -126,8 +126,11 @@
 |---------|:-----------:|:---------:|
 | Global config directory | `~/.claude/` | `~/.legna/` (auto-migrated) |
 | WebUI admin panel | ❌ | ✅ `legna admin` |
+| WebUI profile inline editing | ❌ | ✅ Edit any profile directly from card, per-file read/write API |
+| WebUI preset templates | ❌ | ✅ 7 provider presets (DeepSeek/Kimi/GLM/Qwen/MiniMax/MiMo/Anthropic) |
 | WebUI chat viewer | ❌ | ✅ Session replay with thinking/tool call visualization |
 | WebUI live chat | ❌ | ✅ SSE streaming chat for API connectivity testing (single-turn only) |
+| Kiro Gateway optimization | ❌ | ✅ Client-side history compression (thinking/tool_result/schema) |
 | Config migration tool | ❌ | ✅ `legna migrate` |
 | MiniMax authentication | ❌ | ✅ `/auth-minimax` |
 | Pure TS syntax highlighting | ❌ Requires native modules | ✅ Zero native dependencies |

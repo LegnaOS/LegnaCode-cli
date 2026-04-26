@@ -615,6 +615,29 @@ Admin WebUI: Settings panel → "API 路由模式" dropdown.
 
 ---
 
+## Kiro Gateway Optimization
+
+When `kiroGateway: true` is set in settings, LegnaCode compresses history messages before sending to reduce token consumption. This is aligned with the Kiro Gateway's `converter.py` compression logic.
+
+File: `src/utils/model/kiroOptimize.ts`
+
+### Compression Rules
+
+| Target | Condition | Action |
+|--------|-----------|--------|
+| thinking blocks | distance > 5 turns | truncateMiddle to 2000 chars / 60 lines |
+| redacted_thinking | always | remove |
+| tool_result content | distance > 8 turns | truncateMiddle to 8000 chars / 150 lines |
+| image blocks | distance > 5 turns | replace with `[image omitted from history]` |
+| tool description | > 9216 chars | truncate |
+| JSON schema | always | whitelist filter + anyOf/oneOf flatten + compact |
+
+### Integration Point
+
+Called in `paramsFromContext()` after `applyModelAdapter()`, only when `kiroGateway` setting is enabled. Uses lazy `require()` to avoid import overhead when disabled.
+
+---
+
 ## MCP Integration
 
 MCP (Model Context Protocol) is deeply integrated in `src/services/mcp/`.

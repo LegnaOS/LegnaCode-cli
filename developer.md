@@ -615,6 +615,29 @@ Admin WebUI：设置面板 → "API 路由模式"下拉框。
 
 ---
 
+## Kiro Gateway 优化
+
+当 settings 中设置 `kiroGateway: true` 时，LegnaCode 在发送前压缩历史消息以减少 token 消耗。与 Kiro Gateway 的 `converter.py` 压缩逻辑对齐。
+
+文件：`src/utils/model/kiroOptimize.ts`
+
+### 压缩规则
+
+| 目标 | 条件 | 操作 |
+|------|------|------|
+| thinking blocks | distance > 5 轮 | truncateMiddle 到 2000 chars / 60 lines |
+| redacted_thinking | 始终 | 删除 |
+| tool_result content | distance > 8 轮 | truncateMiddle 到 8000 chars / 150 lines |
+| image blocks | distance > 5 轮 | 替换为 `[image omitted from history]` |
+| 工具 description | > 9216 chars | 截断 |
+| JSON schema | 始终 | 白名单过滤 + anyOf/oneOf 降级 + 精简 |
+
+### 接入点
+
+在 `paramsFromContext()` 中 `applyModelAdapter()` 之后调用，仅当 `kiroGateway` 设置启用时。使用懒加载 `require()` 避免未启用时的导入开销。
+
+---
+
 ## MCP 集成
 
 MCP (Model Context Protocol) 深度集成在 `src/services/mcp/`。
