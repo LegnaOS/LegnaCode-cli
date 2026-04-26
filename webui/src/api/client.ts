@@ -57,6 +57,17 @@ export function createProfile(scope: Scope, filename: string, content: Record<st
   })
 }
 
+export function getProfileSettings(scope: Scope, filename: string) {
+  return request<Record<string, unknown>>(`/api/${scope}/profiles/${filename}`)
+}
+
+export function saveProfileSettings(scope: Scope, filename: string, data: Record<string, unknown>) {
+  return request<{ ok: boolean }>(`/api/${scope}/profiles/${filename}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
 export interface Session {
   id: string
   project: string

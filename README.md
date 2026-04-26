@@ -4,7 +4,7 @@
 
 **An AI-powered terminal programming assistant, supercharged.**
 
-[![version](https://img.shields.io/badge/version-1.9.9-blue)](./CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-2.0.0-blue)](./CHANGELOG.md)
 [![platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Linux%20%7C%20Windows-brightgreen)](#platform-support)
 [![license](https://img.shields.io/badge/license-MIT-yellow)](./LICENSE)
 [![Claude Code](https://img.shields.io/badge/based%20on-Claude%20Code-blueviolet)](https://github.com/anthropics/claude-code)
@@ -34,6 +34,7 @@ LegnaCode is built on top of [Claude Code CLI](https://github.com/anthropics/cla
 
 | Version | Summary |
 |---------|---------|
+| **2.0.0** | Kiro Gateway client-side history optimization; Admin profile inline editing; Bash sandbox removed |
 | **1.9.9** | Bash exit code 65 彻底修复；Admin 预设配置模板；ANTHROPIC_MODEL 字段 |
 | **1.9.5** | Admin preset profile templates (7 providers); ANTHROPIC_MODEL field; migration auto-fill |
 | **1.9.4** | macOS Seatbelt sandbox rewrite (allow-by-default); Shell.ts sandbox return path fix |

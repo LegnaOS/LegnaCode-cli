@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react'
 import type { Scope } from '../api/client'
-import { getSettings, saveSettings } from '../api/client'
+import { getSettings, saveSettings, getProfileSettings, saveProfileSettings } from '../api/client'
 
-interface Props { scope: Scope }
+interface Props {
+  scope: Scope
+  targetFile?: string  // specific profile filename to edit
+  onClose?: () => void // callback to close inline editor
+}
 
 interface SettingField {
   key: string
@@ -28,6 +32,7 @@ const FIELDS: SettingField[] = [
   { key: 'env.ANTHROPIC_DEFAULT_HAIKU_MODEL', label: 'Haiku 模型映射', type: 'text', nested: 'env.ANTHROPIC_DEFAULT_HAIKU_MODEL' },
   { key: 'env.CLAUDE_CODE_MAX_OUTPUT_TOKENS', label: '最大输出 Tokens', type: 'number', nested: 'env.CLAUDE_CODE_MAX_OUTPUT_TOKENS' },
   { key: 'env.API_TIMEOUT_MS', label: 'API 超时 (ms)', type: 'number', nested: 'env.API_TIMEOUT_MS' },
+  { key: 'kiroGateway', label: 'Kiro Gateway 优化', type: 'toggle' },
   { key: 'alwaysThinkingEnabled', label: '始终思考', type: 'toggle' },
   { key: 'skipDangerousModePermissionPrompt', label: '跳过危险确认', type: 'toggle' },
   { key: 'env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS', label: 'Agent Teams', type: 'select', nested: 'env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS', options: [
@@ -56,7 +61,7 @@ function setNestedValue(obj: any, path: string, value: any): any {
   return clone
 }
 
-export function SettingsPanel({ scope }: Props) {
+export function SettingsPanel({ scope, targetFile, onClose }: Props) {
   const [data, setData] = useState<Record<string, unknown>>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -64,8 +69,11 @@ export function SettingsPanel({ scope }: Props) {
 
   useEffect(() => {
     setLoading(true)
-    getSettings(scope).then(setData).catch(() => setData({})).finally(() => setLoading(false))
-  }, [scope])
+    const loader = targetFile
+      ? getProfileSettings(scope, targetFile)
+      : getSettings(scope)
+    loader.then(setData).catch(() => setData({})).finally(() => setLoading(false))
+  }, [scope, targetFile])
 
   const getValue = (field: SettingField) => {
     const path = field.nested || field.key
@@ -81,7 +89,11 @@ export function SettingsPanel({ scope }: Props) {
     setSaving(true)
     setMsg('')
     try {
-      await saveSettings(scope, data)
+      if (targetFile) {
+        await saveProfileSettings(scope, targetFile, data)
+      } else {
+        await saveSettings(scope, data)
+      }
       setMsg('已保存')
       setTimeout(() => setMsg(''), 2000)
     } catch (e: any) {
@@ -139,6 +151,14 @@ export function SettingsPanel({ scope }: Props) {
           {saving ? '保存中...' : '保存'}
         </button>
         {msg && <span className={`text-xs ${msg.startsWith('已') ? 'text-green-400' : 'text-red-400'}`}>{msg}</span>}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors"
+          >
+            关闭
+          </button>
+        )}
       </div>
     </div>
   )

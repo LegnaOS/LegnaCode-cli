@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { Scope, Profile } from '../api/client'
 import { getProfiles, switchProfile, cloneProfile, createProfile } from '../api/client'
+import { SettingsPanel } from './settings-panel'
 
 interface Props { scope: Scope }
 
@@ -114,6 +115,7 @@ export function ProfilesPanel({ scope }: Props) {
   const [loading, setLoading] = useState(true)
   const [switching, setSwitching] = useState<string | null>(null)
   const [cloning, setCloning] = useState<string | null>(null)
+  const [editing, setEditing] = useState<string | null>(null)
   const [newName, setNewName] = useState('')
   const [error, setError] = useState('')
   const [showPresets, setShowPresets] = useState(false)
@@ -229,9 +231,10 @@ export function ProfilesPanel({ scope }: Props) {
       )}
 
       {profiles.map(p => (
-        <div key={p.filename} className={`flex items-center justify-between p-3 rounded-lg border ${
-          p.isActive ? 'border-blue-500 bg-blue-500/10' : 'border-gray-700 bg-gray-800/50'
-        }`}>
+        <div key={p.filename}>
+          <div className={`flex items-center justify-between p-3 rounded-lg border ${
+            p.isActive ? 'border-blue-500 bg-blue-500/10' : 'border-gray-700 bg-gray-800/50'
+          }`}>
           <div>
             <div className="text-sm font-medium text-gray-200">
               {p.filename}
@@ -244,6 +247,12 @@ export function ProfilesPanel({ scope }: Props) {
             </div>
           </div>
           <div className="flex gap-2">
+            <button
+              onClick={() => setEditing(editing === p.filename ? null : p.filename)}
+              className={`px-3 py-1 text-xs ${editing === p.filename ? 'bg-yellow-600 hover:bg-yellow-500' : 'bg-gray-600 hover:bg-gray-500'} text-white rounded transition-colors`}
+            >
+              {editing === p.filename ? '收起' : '编辑'}
+            </button>
             <button
               onClick={() => { setCloning(p.filename); setNewName(''); setError('') }}
               className="px-3 py-1 text-xs bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors"
@@ -260,6 +269,12 @@ export function ProfilesPanel({ scope }: Props) {
               </button>
             )}
           </div>
+        </div>
+        {editing === p.filename && (
+          <div className="ml-2 border-l-2 border-yellow-600/50 pl-3">
+            <SettingsPanel scope={scope} targetFile={p.filename} onClose={() => setEditing(null)} />
+          </div>
+        )}
         </div>
       ))}
 

@@ -4,6 +4,18 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
+## [2.0.0] - 2026-04-26
+
+### Features
+
+- **Kiro Gateway Client-Side History Optimization** — New `kiroGateway` setting enables client-side history compression before sending to Kiro Gateway. Aligned with Gateway's converter.py: thinking blocks truncated (distance>5, 2000c/60l), tool_result truncated (distance>8, 8000c/150l), images replaced with placeholders, redacted_thinking removed, JSON schemas normalized (whitelist filtering, anyOf/oneOf flattening, empty required removal), tool descriptions capped at 9216 chars.
+- **Admin Profile Inline Editing** — Each profile card now has an "编辑" button that expands an inline settings editor for that specific file. No need to switch profiles to edit them.
+- **Profile-Specific API** — `GET/PUT /api/:scope/profiles/:filename` for reading/writing individual profile files.
+
+### Fixes
+
+- **Bash Sandbox Completely Removed** — Disabled native sandbox addon (`sandboxAddon = null`), Seatbelt fallback (`wrapCommand` returns `none`), and `sandbox-adapter.ts` native path. The `(deny default)` Seatbelt profile was blocking all commands. Command safety handled at TS permission layer.
+
 ## [1.9.9] - 2026-04-26
 
 ### Features

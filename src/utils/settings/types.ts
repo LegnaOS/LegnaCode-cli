@@ -647,6 +647,13 @@ export const SettingsSchema = lazySchema(() =>
           'API format for model communication. "anthropic" uses Anthropic Messages API (default). ' +
             '"openai" uses OpenAI Chat Completions API format — requests are translated and responses converted back.',
         ),
+      kiroGateway: z
+        .boolean()
+        .optional()
+        .describe(
+          'Enable Kiro Gateway client-side history optimization. When true, ' +
+            'compresses thinking/tool_result in older messages and simplifies tool schemas before sending.',
+        ),
       language: z
         .string()
         .optional()

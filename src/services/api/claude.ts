@@ -1738,7 +1738,19 @@ async function* queryModel(
     }
 
     // Apply model-specific adapter transformations (MiMo, DeepSeek, etc.)
-    return applyModelAdapter(rawParams)
+    let finalParams = applyModelAdapter(rawParams)
+
+    // Kiro Gateway client-side history optimization
+    try {
+      const { getGlobalSettings } = require('../../utils/envUtils.js')
+      const settings = getGlobalSettings?.() ?? {}
+      if (settings.kiroGateway) {
+        const { applyKiroOptimizations } = require('../../utils/model/kiroOptimize.js')
+        finalParams = applyKiroOptimizations(finalParams)
+      }
+    } catch {}
+
+    return finalParams
   }
 
   // Compute log scalars synchronously so the fire-and-forget .then() closure

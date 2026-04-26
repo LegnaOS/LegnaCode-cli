@@ -198,6 +198,30 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
     }
   }
 
+  // GET /api/:scope/profiles/:filename — read specific profile content
+  if (sub.startsWith('profiles/') && method === 'GET' && sub !== 'profiles' && !sub.endsWith('/switch') && !sub.endsWith('/clone') && !sub.endsWith('/create')) {
+    const filename = sub.replace('profiles/', '')
+    if (filename && filename.startsWith('settings') && filename.endsWith('.json')) {
+      try {
+        const data = JSON.parse(readFileSync(join(dir, filename), 'utf-8'))
+        return json(data)
+      } catch {
+        return json({})
+      }
+    }
+  }
+
+  // PUT /api/:scope/profiles/:filename — write specific profile content
+  if (sub.startsWith('profiles/') && method === 'PUT' && sub !== 'profiles') {
+    const filename = sub.replace('profiles/', '')
+    if (filename && filename.startsWith('settings') && filename.endsWith('.json')) {
+      const body = await req.json()
+      mkdirSync(dir, { recursive: true })
+      writeFileSync(join(dir, filename), JSON.stringify(body, null, 2) + '\n')
+      return json({ ok: true })
+    }
+  }
+
   // GET /api/:scope/sessions
   if (sub === 'sessions' && method === 'GET') {
     const limit = parseInt(url.searchParams.get('limit') || '50', 10)
