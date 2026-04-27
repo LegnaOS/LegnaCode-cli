@@ -5,7 +5,7 @@
  * Shows current tool name, short status text, and supports i18n.
  */
 
-import type { Locale, I18nStrings } from '../i18n/index.js';
+import type { I18nStrings } from '../i18n/index.js';
 
 const STATE_MAP: Record<string, keyof I18nStrings['office']> = {
   idle: 'idle',

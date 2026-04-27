@@ -35,7 +35,7 @@ export function useServerMessages(
 ): ServerMessageState {
   const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected');
   const [agents, setAgents] = useState<number[]>([]);
-  const [agentTools, setAgentTools] = useState<Record<number, ToolActivity[]>>({});
+  const [agentTools] = useState<Record<number, ToolActivity[]>>({});
   const [agentStatuses, setAgentStatuses] = useState<Record<number, string>>({});
   const wsRef = useRef<WebSocket | null>(null);
   const agentIdMap = useRef(new Map<string, number>());
@@ -62,7 +62,7 @@ export function useServerMessages(
         ids.push(id);
         statuses[id] = a.state ?? 'idle';
         if (!os.characters.has(id)) {
-          os.addCharacter(id, a.name ?? `Agent ${a.id.slice(0, 6)}`);
+          os.addAgent(id);
         }
       }
       setAgents(ids);
@@ -73,7 +73,7 @@ export function useServerMessages(
       setAgents(prev => prev.includes(id) ? prev : [...prev, id]);
       setAgentStatuses(prev => ({ ...prev, [id]: agent.state ?? 'idle' }));
       if (!os.characters.has(id)) {
-        os.addCharacter(id, agent.name ?? `Agent ${agent.id.slice(0, 6)}`);
+        os.addAgent(id);
       }
     } else if (data.type === 'agentRemoved') {
       const agentId = data.agentId as string;
@@ -81,7 +81,7 @@ export function useServerMessages(
       if (id !== undefined) {
         setAgents(prev => prev.filter(a => a !== id));
         setAgentStatuses(prev => { const n = { ...prev }; delete n[id]; return n; });
-        os.removeCharacter(id);
+        os.removeAgent(id);
         agentIdMap.current.delete(agentId);
       }
     }

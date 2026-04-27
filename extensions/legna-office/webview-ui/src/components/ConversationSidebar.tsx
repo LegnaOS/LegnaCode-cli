@@ -5,7 +5,7 @@
  * Renders alongside the pixel office canvas.
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import type { Locale } from '../i18n/index.js';
 
 export interface ConversationMessage {
