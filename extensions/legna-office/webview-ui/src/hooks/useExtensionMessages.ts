@@ -510,7 +510,22 @@ export function useExtensionMessages(
     };
     window.addEventListener('message', handler);
     vscode.postMessage({ type: 'webviewReady' });
-    return () => window.removeEventListener('message', handler);
+
+    // Fallback: if extension backend never sends layoutLoaded (e.g. asset loading
+    // crashes, restoreAgents throws, etc.), force layoutReady after 3s so the
+    // webview doesn't stay stuck on "Loading..." forever.
+    const fallbackTimer = setTimeout(() => {
+      if (!layoutReadyRef.current) {
+        console.warn('[Webview] layoutLoaded not received after 3s — using default layout');
+        layoutReadyRef.current = true;
+        setLayoutReady(true);
+      }
+    }, 3000);
+
+    return () => {
+      window.removeEventListener('message', handler);
+      clearTimeout(fallbackTimer);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getOfficeState]);
 
