@@ -27,12 +27,17 @@ export function getProjectDirPath(cwd?: string): string {
   // must use the same directory as the terminal's working directory.
   const workspacePath = cwd || vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || os.homedir();
   const dirName = workspacePath.replace(/[^a-zA-Z0-9-]/g, '-');
-  const projectDir = path.join(os.homedir(), '.claude', 'projects', dirName);
+  // Try .legna first, fall back to .claude for backward compat
+  let projectDir = path.join(os.homedir(), '.legna', 'projects', dirName);
+  if (!fs.existsSync(projectDir)) {
+    const legacyDir = path.join(os.homedir(), '.claude', 'projects', dirName);
+    if (fs.existsSync(legacyDir)) projectDir = legacyDir;
+  }
   console.log(`[LegnaCode Office] Terminal: Project dir: ${workspacePath} → ${dirName}`);
 
   // Verify the directory exists; if not, try fuzzy matching against existing dirs
   if (!fs.existsSync(projectDir)) {
-    const projectsRoot = path.join(os.homedir(), '.claude', 'projects');
+    const projectsRoot = path.join(os.homedir(), '.legna', 'projects');
     try {
       if (fs.existsSync(projectsRoot)) {
         const candidates = fs.readdirSync(projectsRoot);
@@ -91,10 +96,10 @@ export async function launchNewTerminal(
   terminal.show();
 
   const sessionId = crypto.randomUUID();
-  const claudeCmd = bypassPermissions
-    ? `claude --session-id ${sessionId} --dangerously-skip-permissions`
-    : `claude --session-id ${sessionId}`;
-  terminal.sendText(claudeCmd);
+  const legnaCmd = bypassPermissions
+    ? `legna --session-id ${sessionId} --dangerously-skip-permissions`
+    : `legna --session-id ${sessionId}`;
+  terminal.sendText(legnaCmd);
 
   const projectDir = getProjectDirPath(cwd);
 

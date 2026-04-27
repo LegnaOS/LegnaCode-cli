@@ -1180,7 +1180,7 @@ function folderNameFromProjectDir(dirName: string): string {
   return parts[parts.length - 1] || dirName;
 }
 
-/** Scan ALL ~/.claude/projects/ directories for active sessions (global discovery). */
+/** Scan ALL ~/.legna/projects/ + ~/.claude/projects/ directories for active sessions. */
 function scanGlobalProjectDirs(
   knownJsonlFiles: Set<string>,
   nextAgentIdRef: { current: number },
@@ -1192,17 +1192,21 @@ function scanGlobalProjectDirs(
   webview: vscode.Webview | undefined,
   persistAgents: () => void,
 ): void {
-  const projectsRoot = path.join(os.homedir(), '.claude', 'projects');
-  let dirs: fs.Dirent[];
-  try {
-    dirs = fs.readdirSync(projectsRoot, { withFileTypes: true }).filter((d) => d.isDirectory());
-  } catch {
-    return;
+  const roots = [
+    path.join(os.homedir(), '.legna', 'projects'),
+    path.join(os.homedir(), '.claude', 'projects'),
+  ];
+  const allDirs: Array<{ dirPath: string; entry: fs.Dirent }> = [];
+  for (const root of roots) {
+    try {
+      for (const d of fs.readdirSync(root, { withFileTypes: true })) {
+        if (d.isDirectory()) allDirs.push({ dirPath: path.join(root, d.name), entry: d });
+      }
+    } catch { /* dir may not exist */ }
   }
 
   const now = Date.now();
-  for (const dir of dirs) {
-    const dirPath = path.join(projectsRoot, dir.name);
+  for (const { dirPath, entry: dir } of allDirs) {
     // Skip directories already tracked by workspace scanning
     if (trackedProjectDirs.has(dirPath)) continue;
 

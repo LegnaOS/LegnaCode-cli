@@ -28,6 +28,7 @@ function copyWebviewDist() {
 }
 
 async function main() {
+  // 1. Build extension host
   const ctx = await esbuild.context({
     entryPoints: ['src/extension.ts'],
     bundle: true,
@@ -40,11 +41,26 @@ async function main() {
     external: ['vscode'],
     logLevel: 'silent',
   });
+
+  // 2. Build hook script (standalone CJS, no vscode dependency)
+  const hookCtx = await esbuild.context({
+    entryPoints: ['server/src/providers/hook/claude/hooks/claude-hook.ts'],
+    bundle: true,
+    format: 'cjs',
+    minify: production,
+    platform: 'node',
+    outfile: 'dist/hooks/claude-hook.js',
+    logLevel: 'silent',
+  });
+
   if (watch) {
     await ctx.watch();
+    await hookCtx.watch();
   } else {
     await ctx.rebuild();
     await ctx.dispose();
+    await hookCtx.rebuild();
+    await hookCtx.dispose();
     copyAssets();
     copyWebviewDist();
   }
