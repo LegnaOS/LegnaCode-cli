@@ -1,0 +1,61 @@
+{
+  "name": "legna-office",
+  "displayName": "LegnaCode Office",
+  "description": "Pixel art office where your LegnaCode agents come to life as animated characters",
+  "version": "1.0.0",
+  "publisher": "legna-lnc",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LegnaOS/LegnaCode-cli.git"
+  },
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.105.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "legna-office.showPanel",
+        "title": "LegnaCode Office: Show Panel"
+      },
+      {
+        "command": "legna-office.exportDefaultLayout",
+        "title": "LegnaCode Office: Export Layout as Default"
+      }
+    ],
+    "viewsContainers": {
+      "panel": [
+        {
+          "id": "legna-office-panel",
+          "title": "LegnaCode Office",
+          "icon": "$(window)"
+        }
+      ]
+    },
+    "views": {
+      "legna-office-panel": [
+        {
+          "type": "webview",
+          "id": "legna-office.panelView",
+          "name": "LegnaCode Office"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "build:webview": "cd webview-ui && npm run build",
+    "compile": "node esbuild.js && npm run build:webview",
+    "build": "npm run compile",
+    "watch:esbuild": "node esbuild.js --watch",
+    "package": "node esbuild.js --production && npm run build:webview"
+  },
+  "devDependencies": {
+    "@types/node": "25.x",
+    "@types/vscode": "^1.105.0",
+    "esbuild": "^0.28.0",
+    "typescript": "^5.9.3"
+  }
+}
