@@ -81,6 +81,7 @@ export function useExtensionMessages(
   getOfficeState: () => OfficeState,
   onLayoutLoaded?: (layout: OfficeLayout) => void,
   isEditDirty?: () => boolean,
+  onConversationMessage?: (msg: { id: string; role: string; content: string; timestamp: number; agentId?: number }) => void,
 ): ExtensionMessageState {
   const [agents, setAgents] = useState<number[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<number | null>(null);
@@ -252,6 +253,8 @@ export function useExtensionMessages(
         const toolName = (msg.toolName as string | undefined) ?? extractToolName(status);
         os.setAgentTool(id, toolName);
         os.setAgentActive(id, true);
+        // Show tool name bubble (short)
+        os.showToolBubble(id, toolName ?? 'working');
         // Don't clear the permission bubble if the hook already confirmed permission is needed
         if (!permissionActive) {
           os.clearPermissionBubble(id);
@@ -506,6 +509,14 @@ export function useExtensionMessages(
       } else if (msg.type === 'agentTokenUsage') {
         const id = msg.id as number;
         os.setAgentTokens(id, msg.inputTokens as number, msg.outputTokens as number);
+      } else if (msg.type === 'conversationMessage') {
+        onConversationMessage?.({
+          id: `${msg.id}-${msg.timestamp ?? Date.now()}`,
+          role: msg.role as string,
+          content: msg.content as string,
+          timestamp: msg.timestamp as number,
+          agentId: msg.id as number,
+        });
       }
     };
     window.addEventListener('message', handler);

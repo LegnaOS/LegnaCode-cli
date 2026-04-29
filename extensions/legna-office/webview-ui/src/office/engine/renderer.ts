@@ -496,6 +496,48 @@ function renderBubbles(
   for (const ch of characters) {
     if (!ch.bubbleType) continue;
 
+    const sittingOff = ch.state === CharacterState.TYPE ? BUBBLE_SITTING_OFFSET_PX : 0;
+
+    if (ch.bubbleType === 'tool' && ch.bubbleText) {
+      // Text bubble for tool calls
+      let alpha = 1.0;
+      if (ch.bubbleTimer < 0.5) alpha = ch.bubbleTimer / 0.5;
+      const bx = Math.round(offsetX + ch.x * zoom);
+      const by = Math.round(offsetY + (ch.y + sittingOff - BUBBLE_VERTICAL_OFFSET_PX) * zoom - 14 * zoom);
+      ctx.save();
+      if (alpha < 1.0) ctx.globalAlpha = alpha;
+      // Background
+      ctx.font = `${Math.max(7, Math.round(7 * zoom))}px monospace`;
+      const metrics = ctx.measureText(ch.bubbleText);
+      const pw = metrics.width + 10;
+      const ph = 16;
+      const rx = bx - pw / 2;
+      const ry = by - ph;
+      ctx.fillStyle = 'rgba(15,23,42,0.9)';
+      ctx.beginPath();
+      ctx.moveTo(rx + 3, ry);
+      ctx.arcTo(rx + pw, ry, rx + pw, ry + ph, 3);
+      ctx.arcTo(rx + pw, ry + ph, rx, ry + ph, 3);
+      ctx.arcTo(rx, ry + ph, rx, ry, 3);
+      ctx.arcTo(rx, ry, rx + pw, ry, 3);
+      ctx.fill();
+      // Triangle
+      ctx.beginPath();
+      ctx.moveTo(bx - 3, ry + ph);
+      ctx.lineTo(bx + 3, ry + ph);
+      ctx.lineTo(bx, ry + ph + 4);
+      ctx.closePath();
+      ctx.fill();
+      // Text
+      ctx.fillStyle = '#a5f3fc';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(ch.bubbleText, bx, ry + ph / 2);
+      ctx.restore();
+      continue;
+    }
+
+    // Pixel sprite bubbles (permission / waiting)
     const sprite =
       ch.bubbleType === 'permission' ? BUBBLE_PERMISSION_SPRITE : BUBBLE_WAITING_SPRITE;
 
@@ -506,10 +548,6 @@ function renderBubbles(
     }
 
     const cached = getCachedSprite(sprite, zoom);
-    // Position: centered above the character's head
-    // Character is anchored bottom-center at (ch.x, ch.y), sprite is 16x24
-    // Place bubble above head with a small gap; follow sitting offset
-    const sittingOff = ch.state === CharacterState.TYPE ? BUBBLE_SITTING_OFFSET_PX : 0;
     const bubbleX = Math.round(offsetX + ch.x * zoom - cached.width / 2);
     const bubbleY = Math.round(
       offsetY + (ch.y + sittingOff - BUBBLE_VERTICAL_OFFSET_PX) * zoom - cached.height - 1 * zoom,

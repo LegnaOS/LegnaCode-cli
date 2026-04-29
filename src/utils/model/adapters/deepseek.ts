@@ -31,7 +31,6 @@ import {
   stripBetas,
   stripUnsupportedFields,
   stripCacheControl,
-  stripReasoningContent,
   stripReasonerSamplingParams,
   stripUnsupportedContentBlocks,
   reorderThinkingBlocks,
@@ -60,7 +59,9 @@ export const DeepSeekAdapter: ModelAdapter = {
     stripBetas(out)
     stripUnsupportedFields(out)
     stripCacheControl(out)
-    stripReasoningContent(out)
+    // NOTE: Do NOT call stripReasoningContent here.
+    // DeepSeek OpenAI endpoint requires reasoning_content to be passed back in multi-turn.
+    // Anthropic endpoint ignores unknown fields, so keeping it is safe for both paths.
     stripUnsupportedContentBlocks(out)
     // No injectTopP — DeepSeek defaults to 1.0, no need to override
     if (out.model && out.model.includes('reasoner')) {

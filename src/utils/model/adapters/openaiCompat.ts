@@ -69,7 +69,12 @@ function convertAnthropicToOpenAI(msg: AnthropicMessage): OpenAIMessage[] {
 
   // Simple string content
   if (typeof content === 'string') {
-    return [{ role, content }]
+    const result: OpenAIMessage = { role, content }
+    // Preserve reasoning_content for DeepSeek/Kimi multi-turn
+    if (role === 'assistant' && msg.reasoning_content) {
+      result.reasoning_content = msg.reasoning_content
+    }
+    return [result]
   }
 
   if (!Array.isArray(content)) {
@@ -93,7 +98,8 @@ function convertAnthropicToOpenAI(msg: AnthropicMessage): OpenAIMessage[] {
   // assistant with tool_use blocks
   const toolUses = content.filter((b: any) => b.type === 'tool_use')
   const textParts = content.filter((b: any) => b.type === 'text').map((b: any) => b.text).join('')
-  const thinkingParts = content.filter((b: any) => b.type === 'thinking').map((b: any) => b.thinking ?? '').join('')
+  const thinkingBlocks = content.filter((b: any) => b.type === 'thinking')
+  const thinkingParts = thinkingBlocks.map((b: any) => b.thinking ?? '').join('')
 
   if (toolUses.length > 0 && role === 'assistant') {
     const msg: OpenAIMessage = {
@@ -109,7 +115,7 @@ function convertAnthropicToOpenAI(msg: AnthropicMessage): OpenAIMessage[] {
       })),
     }
     // DeepSeek/Kimi OpenAI endpoints require reasoning_content to be passed back
-    if (thinkingParts) msg.reasoning_content = thinkingParts
+    if (thinkingBlocks.length > 0) msg.reasoning_content = thinkingParts || ''
     return [msg]
   }
 
@@ -120,8 +126,8 @@ function convertAnthropicToOpenAI(msg: AnthropicMessage): OpenAIMessage[] {
     .join('')
   const result: OpenAIMessage = { role, content: text || '' }
   // Pass back reasoning_content for assistant messages with thinking
-  if (role === 'assistant' && thinkingParts) {
-    result.reasoning_content = thinkingParts
+  if (role === 'assistant' && thinkingBlocks.length > 0) {
+    result.reasoning_content = thinkingParts || ''
   }
   return [result]
 }

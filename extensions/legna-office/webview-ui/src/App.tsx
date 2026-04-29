@@ -74,7 +74,15 @@ function App() {
     hooksEnabled,
     setHooksEnabled,
     hooksInfoShown,
-  } = useExtensionMessages(getOfficeState, editor.setLastSavedLayout, isEditDirty);
+  } = useExtensionMessages(getOfficeState, editor.setLastSavedLayout, isEditDirty, (msg) => {
+    addConversationMessage({
+      id: msg.id,
+      role: msg.role as 'user' | 'assistant' | 'tool',
+      content: msg.content,
+      timestamp: msg.timestamp,
+      agentId: msg.agentId,
+    });
+  });
 
   // Show migration notice once layout reset is detected
   const [migrationNoticeDismissed, setMigrationNoticeDismissed] = useState(false);
@@ -87,7 +95,7 @@ function App() {
   const [isDebugMode, setIsDebugMode] = useState(false);
   const [alwaysShowOverlay, setAlwaysShowOverlay] = useState(false);
   const [chatExpanded, setChatExpanded] = useState(false);
-  const { messages: conversationMessages } = useConversation();
+  const { messages: conversationMessages, addMessage: addConversationMessage, loadSnapshot: loadConversationSnapshot } = useConversation();
   const { locale } = useI18n();
 
   const currentMajorMinor = toMajorMinor(extensionVersion);

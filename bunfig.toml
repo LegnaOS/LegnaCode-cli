@@ -4,8 +4,8 @@
 # Feature flags control dead code elimination via `import { feature } from 'bun:bundle'`
 
 [bundle.define]
-"MACRO.VERSION" = '"2.0.5"'
-"MACRO.BUILD_TIME" = '"2026-03-31T00:00:00.000Z"'
+"MACRO.VERSION" = '"2.0.7"'
+"MACRO.BUILD_TIME" = '"2026-04-30T00:00:00.000Z"'
 "MACRO.PACKAGE_URL" = '"@legna-lnc/legnacode"'
 "MACRO.NATIVE_PACKAGE_URL" = '""'
 "MACRO.FEEDBACK_CHANNEL" = '"https://github.com/anthropics/claude-code/issues"'

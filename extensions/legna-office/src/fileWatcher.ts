@@ -221,6 +221,9 @@ export function readNewLines(
 // Track all project directories to scan (supports multi-root workspaces)
 const trackedProjectDirs = new Set<string>();
 
+// Track workspace roots so scanGlobalProjectDirs can also scan project-local .legna/sessions/
+const knownWorkspaceRoots = new Set<string>();
+
 /** Check if a project dir is tracked by the workspace scanner. */
 export function isTrackedProjectDir(dir: string): boolean {
   if (trackedProjectDirs.has(dir)) return true;
@@ -252,7 +255,12 @@ export function ensureProjectScan(
   persistAgents: () => void,
   _onAgentCreated?: (agent: AgentState) => void,
   hooksEnabledRef?: { current: boolean },
+  workspaceRoot?: string,
 ): void {
+  // Register workspace root for project-local session scanning
+  if (workspaceRoot) {
+    knownWorkspaceRoots.add(workspaceRoot);
+  }
   // Set deps for per-agent /clear detection (only on first call)
   if (!clearDetectionDeps) {
     clearDetectionDeps = {
@@ -1180,7 +1188,7 @@ function folderNameFromProjectDir(dirName: string): string {
   return parts[parts.length - 1] || dirName;
 }
 
-/** Scan ALL ~/.legna/projects/ + ~/.claude/projects/ directories for active sessions. */
+/** Scan ~/.legna/projects/ + ~/.claude/projects/ + workspace-local .legna/sessions/ for active sessions. */
 function scanGlobalProjectDirs(
   knownJsonlFiles: Set<string>,
   nextAgentIdRef: { current: number },
@@ -1203,6 +1211,18 @@ function scanGlobalProjectDirs(
         if (d.isDirectory()) allDirs.push({ dirPath: path.join(root, d.name), entry: d });
       }
     } catch { /* dir may not exist */ }
+  }
+
+  // Also scan project-local .legna/sessions/ for known workspace roots
+  for (const wsRoot of knownWorkspaceRoots) {
+    const localDir = path.join(wsRoot, '.legna', 'sessions');
+    try {
+      const stat = fs.statSync(localDir);
+      if (stat.isDirectory()) {
+        // Synthesize a Dirent-like entry for uniform processing below
+        allDirs.push({ dirPath: localDir, entry: { name: 'sessions', isDirectory: () => true } as fs.Dirent });
+      }
+    } catch { /* dir may not exist yet */ }
   }
 
   const now = Date.now();

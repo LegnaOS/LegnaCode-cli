@@ -97,11 +97,11 @@ export function BottomToolbar({
               : 'bg-accent hover:bg-accent-bright'
           }
         >
-          + Agent
+          + Agent 新增
         </Button>
         <Dropdown isOpen={isBypassMenuOpen}>
           <DropdownItem onClick={() => handleBypassSelect(true)}>
-            Skip permissions mode <span className="text-2xs text-warning">⚠</span>
+            跳过权限 Skip permissions <span className="text-2xs text-warning">⚠</span>
           </DropdownItem>
         </Dropdown>
         <Dropdown isOpen={isFolderPickerOpen} className="min-w-128">
@@ -119,16 +119,16 @@ export function BottomToolbar({
       <Button
         variant={isEditMode ? 'active' : 'default'}
         onClick={onToggleEditMode}
-        title="Edit office layout"
+        title="编辑办公室布局 Edit office layout"
       >
-        Layout
+        布局 Layout
       </Button>
       <Button
         variant={isSettingsOpen ? 'active' : 'default'}
         onClick={onToggleSettings}
-        title="Settings"
+        title="设置 Settings"
       >
-        Settings
+        设置 Settings
       </Button>
     </div>
   );

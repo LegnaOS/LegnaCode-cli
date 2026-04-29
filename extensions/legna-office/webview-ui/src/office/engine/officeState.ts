@@ -54,6 +54,8 @@ export class OfficeState {
   subagentMeta: Map<number, { parentAgentId: number; parentToolId: string }> = new Map();
   private nextSubagentId = -1;
 
+  private buddyId = -9999;
+
   constructor(layout?: OfficeLayout) {
     this.layout = layout || createDefaultLayout();
     this.tileMap = layoutToTileMap(this.layout);
@@ -61,6 +63,7 @@ export class OfficeState {
     this.blockedTiles = getBlockedTiles(this.layout.furniture);
     this.furniture = layoutToFurnitureInstances(this.layout.furniture);
     this.walkableTiles = getWalkableTiles(this.tileMap, this.blockedTiles);
+    this.spawnBuddy();
   }
 
   /** Rebuild all derived state from a new layout. Reassigns existing characters.
@@ -73,7 +76,6 @@ export class OfficeState {
     this.rebuildFurnitureInstances();
     this.walkableTiles = getWalkableTiles(this.tileMap, this.blockedTiles);
 
-    // Shift character positions when grid expands left/up
     if (shift && (shift.col !== 0 || shift.row !== 0)) {
       for (const ch of this.characters.values()) {
         ch.tileCol += shift.col;
@@ -139,6 +141,7 @@ export class OfficeState {
         this.relocateCharacterToWalkable(ch);
       }
     }
+    this.spawnBuddy();
   }
 
   /** Move a character to a random walkable tile */
@@ -293,6 +296,12 @@ export class OfficeState {
       seatId = this.findFreeSeat();
     }
 
+    // Auto-expand: if no free seat, add a desk+chair row to the layout
+    if (!seatId && this.layout) {
+      this.autoExpandOffice();
+      seatId = this.findFreeSeat();
+    }
+
     let ch: Character;
     if (seatId) {
       const seat = this.seats.get(seatId)!;
@@ -323,6 +332,7 @@ export class OfficeState {
   }
 
   removeAgent(id: number): void {
+    if (id === this.buddyId) return; // Never remove buddy
     const ch = this.characters.get(id);
     if (!ch) return;
     if (ch.matrixEffect === 'despawn') return; // already despawning
@@ -672,6 +682,15 @@ export class OfficeState {
     }
   }
 
+  showToolBubble(id: number, text: string): void {
+    const ch = this.characters.get(id);
+    if (ch) {
+      ch.bubbleType = 'tool';
+      ch.bubbleText = text.length > 18 ? text.slice(0, 15) + '...' : text;
+      ch.bubbleTimer = 2.5;
+    }
+  }
+
   /** Dismiss bubble on click — permission: instant, waiting: quick fade */
   dismissBubble(id: number): void {
     const ch = this.characters.get(id);
@@ -683,6 +702,91 @@ export class OfficeState {
       // Trigger immediate fade (0.3s remaining)
       ch.bubbleTimer = Math.min(ch.bubbleTimer, DISMISS_BUBBLE_FAST_FADE_SEC);
     }
+  }
+
+  /** Spawn the buddy pet if not already present. Always wanders, never sits. */
+  private spawnBuddy(): void {
+    if (this.characters.has(this.buddyId)) return;
+    if (this.walkableTiles.length === 0) return;
+    const spawn = this.walkableTiles[Math.floor(Math.random() * this.walkableTiles.length)];
+    const ch = createCharacter(this.buddyId, 5, null, null, 180);
+    ch.x = spawn.col * TILE_SIZE + TILE_SIZE / 2;
+    ch.y = spawn.row * TILE_SIZE + TILE_SIZE / 2;
+    ch.tileCol = spawn.col;
+    ch.tileRow = spawn.row;
+    ch.state = CharacterState.IDLE;
+    ch.isActive = false;
+    ch.isBuddy = true;
+    ch.seatId = null;
+    ch.wanderTimer = 1.0; // Start wandering after 1 second
+    ch.wanderCount = 0;
+    ch.wanderLimit = 999; // Never stop wandering
+    ch.matrixEffect = null;
+    this.characters.set(this.buddyId, ch);
+  }
+
+  /** Auto-expand office when no free seats: add 2 rows at bottom with desk+chair pairs */
+  private autoExpandOffice(): void {
+    const layout = this.layout;
+    const maxRows = 64;
+    if (layout.rows >= maxRows) return;
+
+    const newRows = layout.rows + 2;
+    const cols = layout.cols;
+
+    // Expand tile array: add 2 rows of floor
+    const newTiles = [...layout.tiles];
+    for (let r = 0; r < 2; r++) {
+      for (let c = 0; c < cols; c++) {
+        newTiles.push(1); // FLOOR_1
+      }
+    }
+    layout.tiles = newTiles;
+    layout.rows = newRows;
+
+    // Expand tileColors if present
+    if (layout.tileColors) {
+      for (let r = 0; r < 2; r++) {
+        for (let c = 0; c < cols; c++) {
+          layout.tileColors.push(null);
+        }
+      }
+    }
+
+    // Add desk+chair pairs across the new rows
+    const deskRow = newRows - 2;
+    const chairRow = newRows - 1;
+    let placed = 0;
+    for (let c = 1; c < cols - 2; c += 3) {
+      // desk at (c, deskRow), chair at (c, chairRow) facing UP
+      layout.furniture.push({
+        type: 'desk-1x1',
+        col: c,
+        row: deskRow,
+        uid: `auto-desk-${Date.now()}-${placed}`,
+      });
+      layout.furniture.push({
+        type: 'chair-1',
+        col: c,
+        row: chairRow,
+        uid: `auto-chair-${Date.now()}-${placed}`,
+      });
+      // PC on desk
+      layout.furniture.push({
+        type: 'pc-1',
+        col: c,
+        row: deskRow,
+        uid: `auto-pc-${Date.now()}-${placed}`,
+      });
+      placed++;
+    }
+
+    // Rebuild derived state
+    this.tileMap = layoutToTileMap(layout);
+    this.seats = layoutToSeats(layout.furniture);
+    this.blockedTiles = getBlockedTiles(layout.furniture);
+    this.rebuildFurnitureInstances();
+    this.walkableTiles = getWalkableTiles(this.tileMap, this.blockedTiles);
   }
 
   setTeamInfo(
@@ -744,12 +848,26 @@ export class OfficeState {
         updateCharacter(ch, dt, this.walkableTiles, this.seats, this.tileMap, this.blockedTiles),
       );
 
-      // Tick bubble timer for waiting bubbles
-      if (ch.bubbleType === 'waiting') {
+      // Tick bubble timer for waiting/tool bubbles
+      if (ch.bubbleType === 'waiting' || ch.bubbleType === 'tool') {
         ch.bubbleTimer -= dt;
         if (ch.bubbleTimer <= 0) {
           ch.bubbleType = null;
+          ch.bubbleText = null;
           ch.bubbleTimer = 0;
+        }
+      }
+
+      // Buddy random chatter
+      if (ch.isBuddy && !ch.bubbleType) {
+        if (!ch._buddyChatTimer) ch._buddyChatTimer = 15 + Math.random() * 20;
+        ch._buddyChatTimer -= dt;
+        if (ch._buddyChatTimer <= 0) {
+          const phrases = ['zzZ', '~♪', '...', ':3', '^^', 'meow', '(*´▽`*)', '✧', 'nya~'];
+          ch.bubbleType = 'tool';
+          ch.bubbleText = phrases[Math.floor(Math.random() * phrases.length)];
+          ch.bubbleTimer = 3.0;
+          ch._buddyChatTimer = 15 + Math.random() * 25;
         }
       }
     }

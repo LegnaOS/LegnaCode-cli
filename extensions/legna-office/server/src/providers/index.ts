@@ -13,3 +13,4 @@
 
 export { claudeProvider } from './hook/claude/claude.js';
 export { copyHookScript } from './hook/claude/claudeHookInstaller.js';
+export { legnaProvider } from './hook/legna/legnaProvider.js';

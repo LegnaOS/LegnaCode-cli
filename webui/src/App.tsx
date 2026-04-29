@@ -9,20 +9,18 @@ import { ChatPanel } from './components/chat-panel'
 import { ProjectsPanel } from './components/projects-panel'
 import { MemoryPanel } from './components/memory-panel'
 import { GraphPanel } from './components/graph-panel'
-import { OfficePanel } from './components/office-panel'
 
 const TABS: { key: Scope; label: string }[] = [
   { key: 'claude', label: 'Claude' },
   { key: 'legna', label: 'LegnaCode' },
 ]
 
-const PANELS = ['projects', 'chat', 'office', 'memory', 'graph', 'settings', 'profiles', 'sessions', 'migration'] as const
+const PANELS = ['projects', 'chat', 'memory', 'graph', 'settings', 'profiles', 'sessions', 'migration'] as const
 type Panel = typeof PANELS[number]
 
 const PANEL_LABELS: Record<Panel, string> = {
   projects: '项目总览',
   chat: '聊天记录',
-  office: '像素办公室',
   memory: '记忆管理',
   graph: '关系图谱',
   settings: '配置编辑',
@@ -84,7 +82,6 @@ export default function App() {
       {/* Panel content */}
       {panel === 'projects' && <ProjectsPanel />}
       {panel === 'chat' && <ChatPanel scope={scope} />}
-      {panel === 'office' && <OfficePanel />}
       {panel === 'memory' && <MemoryPanel />}
       {panel === 'graph' && <GraphPanel />}
       {panel === 'settings' && <SettingsPanel scope={scope} />}

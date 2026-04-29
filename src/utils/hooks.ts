@@ -3890,7 +3890,13 @@ export async function* executeSessionStartHooks(
     const { setSessionId } = await import('../services/officeEmitter.js')
     setSessionId(sessionId)
   }
-  emitOfficeEvent('SessionStart', { source, agent_type: agentType, model })
+  emitOfficeEvent('SessionStart', {
+    source,
+    agent_type: agentType,
+    model,
+    transcript_path: sessionId ? getTranscriptPathForSession(sessionId) : undefined,
+    cwd: getCwd(),
+  })
 
   const hookInput: SessionStartHookInput = {
     ...createBaseHookInput(undefined, sessionId),

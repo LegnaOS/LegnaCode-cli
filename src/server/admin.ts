@@ -50,6 +50,11 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
     return json({ version: typeof MACRO !== 'undefined' ? MACRO.VERSION : '1.5.7' })
   }
 
+  // GET /api/office-port — discover LegnaCode Office server port from ~/.legna-office/server.json
+  if (parts[0] === 'office-port' && method === 'GET') {
+    return handleOfficePort()
+  }
+
   // POST /api/migrate
   if (parts[0] === 'migrate' && method === 'POST') {
     return handleMigrate(await req.json())
@@ -436,6 +441,26 @@ function handleSessionMessages(dir: string, scope: Scope, sessionId: string): Re
     return err('Session not found', 404)
   } catch (e: any) {
     return err(e.message, 500)
+  }
+}
+
+function handleOfficePort(): Response {
+  const home = process.env.HOME || process.env.USERPROFILE || '~'
+  const serverJsonPath = join(home, '.legna-office', 'server.json')
+  try {
+    if (!existsSync(serverJsonPath)) {
+      return json({ error: 'Office server not running', running: false }, 503)
+    }
+    const data = JSON.parse(readFileSync(serverJsonPath, 'utf-8'))
+    // Verify the process is still alive
+    if (data.pid) {
+      try { process.kill(data.pid, 0) } catch {
+        return json({ error: 'Office server process dead', running: false }, 503)
+      }
+    }
+    return json({ port: data.port, joinKey: data.joinKey, running: true })
+  } catch (e: any) {
+    return json({ error: e.message, running: false }, 503)
   }
 }
 

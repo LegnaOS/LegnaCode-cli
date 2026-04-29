@@ -21,6 +21,15 @@ interface AgentSnapshot {
   updatedAt?: number;
 }
 
+export type ConversationMsg = {
+  id: string;
+  role: 'user' | 'assistant' | 'tool';
+  content: string;
+  timestamp: number;
+  toolName?: string;
+  agentId?: number;
+};
+
 interface ServerMessageState {
   connectionState: ConnectionState;
   agents: number[];
@@ -32,6 +41,8 @@ interface ServerMessageState {
 export function useServerMessages(
   getOfficeState: () => OfficeState,
   wsUrl?: string,
+  onConversationMessage?: (msg: ConversationMsg) => void,
+  onConversationSnapshot?: (msgs: ConversationMsg[]) => void,
 ): ServerMessageState {
   const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected');
   const [agents, setAgents] = useState<number[]>([]);
@@ -67,6 +78,11 @@ export function useServerMessages(
       }
       setAgents(ids);
       setAgentStatuses(statuses);
+      // Load conversation snapshot
+      const snapshotMessages = (data.messages as ConversationMsg[]) ?? [];
+      if (snapshotMessages.length > 0) {
+        onConversationSnapshot?.(snapshotMessages);
+      }
     } else if (data.type === 'agentUpdate') {
       const agent = data.agent as AgentSnapshot;
       const id = resolveAgentId(agent.id);
@@ -84,8 +100,13 @@ export function useServerMessages(
         os.removeAgent(id);
         agentIdMap.current.delete(agentId);
       }
+    } else if (data.type === 'conversation') {
+      const msg = data.message as ConversationMsg;
+      if (msg) {
+        onConversationMessage?.(msg);
+      }
     }
-  }, [getOfficeState, resolveAgentId]);
+  }, [getOfficeState, resolveAgentId, onConversationMessage, onConversationSnapshot]);
 
   const connect = useCallback(() => {
     if (wsRef.current) return;

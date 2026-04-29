@@ -37,14 +37,14 @@ export function SettingsModal({
   const [soundLocal, setSoundLocal] = useState(isSoundEnabled);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Settings">
+    <Modal isOpen={isOpen} onClose={onClose} title="设置 Settings">
       <MenuItem
         onClick={() => {
           vscode.postMessage({ type: 'openSessionsFolder' });
           onClose();
         }}
       >
-        Open Sessions Folder
+        打开会话目录 Open Sessions Folder
       </MenuItem>
       <MenuItem
         onClick={() => {
@@ -52,7 +52,7 @@ export function SettingsModal({
           onClose();
         }}
       >
-        Export Layout
+        导出布局 Export Layout
       </MenuItem>
       <MenuItem
         onClick={() => {
@@ -60,7 +60,7 @@ export function SettingsModal({
           onClose();
         }}
       >
-        Import Layout
+        导入布局 Import Layout
       </MenuItem>
       <MenuItem
         onClick={() => {
@@ -68,7 +68,7 @@ export function SettingsModal({
           onClose();
         }}
       >
-        Add Asset Directory
+        添加素材目录 Add Asset Directory
       </MenuItem>
       {externalAssetDirectories.map((dir) => (
         <div key={dir} className="flex items-center justify-between py-4 px-10 gap-8">
@@ -89,7 +89,7 @@ export function SettingsModal({
         </div>
       ))}
       <Checkbox
-        label="Sound Notifications"
+        label="声音通知 Sound Notifications"
         checked={soundLocal}
         onChange={() => {
           const newVal = !isSoundEnabled();
@@ -99,21 +99,21 @@ export function SettingsModal({
         }}
       />
       <Checkbox
-        label="Watch All Sessions"
+        label="监控所有会话 Watch All Sessions"
         checked={watchAllSessions}
         onChange={onToggleWatchAllSessions}
       />
       <Checkbox
-        label="Instant Detection (Hooks)"
+        label="即时检测(Hooks) Instant Detection"
         checked={hooksEnabled}
         onChange={onToggleHooksEnabled}
       />
       <Checkbox
-        label="Always Show Labels"
+        label="始终显示标签 Always Show Labels"
         checked={alwaysShowOverlay}
         onChange={onToggleAlwaysShowOverlay}
       />
-      <Checkbox label="Debug View" checked={isDebugMode} onChange={onToggleDebugMode} />
+      <Checkbox label="调试视图 Debug View" checked={isDebugMode} onChange={onToggleDebugMode} />
     </Modal>
   );
 }

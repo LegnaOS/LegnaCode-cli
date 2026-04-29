@@ -145,7 +145,7 @@ export class HookEventHandler {
     const normalized = this.provider.normalizeHookEvent(event);
     if (!normalized) return; // unknown / uninteresting event -- silently drop
     const normEvent = normalized.event;
-    const eventName = event.hook_event_name; // retained for logs only
+    const eventName = event.hook_event_name ?? (event as Record<string, unknown>).hook_name; // retained for logs only
 
     // --- SessionStart: handle /clear for known agents, ignore unknown sessions ---
     // External session detection via SessionStart is deferred to Phase C.

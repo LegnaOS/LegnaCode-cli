@@ -104,7 +104,8 @@ export class LegnaOfficeServer {
       return existing;
     }
 
-    // Start our own server
+    // Start our own server on fixed port 19960
+    const FIXED_PORT = 19960;
     const token = crypto.randomUUID();
     const joinKey = crypto.randomBytes(4).toString('hex'); // 8-char shareable key
     this.startTime = Date.now();
@@ -114,7 +115,21 @@ export class LegnaOfficeServer {
         this.handleRequest(req, res);
       });
 
-      this.server.on('error', reject);
+      this.server.on('error', (err: NodeJS.ErrnoException) => {
+        if (err.code === 'EADDRINUSE') {
+          // Port occupied by stale process — try to kill it via server.json PID
+          const stale = this.readServerJson();
+          if (stale?.pid && stale.pid !== process.pid) {
+            try { process.kill(stale.pid, 'SIGTERM'); } catch {}
+          }
+          // Retry after a short delay
+          setTimeout(() => {
+            this.server?.listen(FIXED_PORT, '127.0.0.1');
+          }, 500);
+        } else {
+          reject(err);
+        }
+      });
       this.server.setTimeout(5000);
 
       // WebSocket upgrade handler
@@ -123,7 +138,7 @@ export class LegnaOfficeServer {
         this.handleWsUpgrade(req, socket, head);
       });
 
-      this.server.listen(0, '127.0.0.1', () => {
+      this.server.listen(FIXED_PORT, '127.0.0.1', () => {
         const addr = this.server?.address();
         if (addr && typeof addr === 'object') {
           this.config = {
@@ -278,6 +293,10 @@ export class LegnaOfficeServer {
       if (responded) return;
       try {
         const event = JSON.parse(body) as Record<string, unknown>;
+        // Normalize field name: CLI sends hook_name, Claude hook scripts send hook_event_name
+        if (!event.hook_event_name && event.hook_name) {
+          event.hook_event_name = event.hook_name;
+        }
         if (event.session_id && event.hook_event_name) {
           this.callback?.(providerId, event);
         }

@@ -2,7 +2,7 @@
   "name": "legna-office",
   "displayName": "LegnaCode Office",
   "description": "Pixel art office where your LegnaCode agents come to life as animated characters",
-  "version": "1.0.0",
+  "version": "1.0.15",
   "publisher": "legna-lnc",
   "repository": {
     "type": "git",
@@ -42,17 +42,18 @@
         {
           "type": "webview",
           "id": "legna-office.panelView",
-          "name": "LegnaCode Office"
+          "name": "LegnaCode Office",
+          "retainContextWhenHidden": true
         }
       ]
     }
   },
   "scripts": {
     "build:webview": "cd webview-ui && npm run build",
-    "compile": "node esbuild.js && npm run build:webview",
+    "compile": "npm run build:webview && node esbuild.js",
     "build": "npm run compile",
     "watch:esbuild": "node esbuild.js --watch",
-    "package": "node esbuild.js --production && npm run build:webview"
+    "package": "npm run build:webview && node esbuild.js --production"
   },
   "devDependencies": {
     "@types/node": "25.x",

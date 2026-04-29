@@ -163,8 +163,10 @@ export interface Character {
   /** Assigned seat uid, or null if no seat */
   seatId: string | null;
   /** Active speech bubble type, or null if none showing */
-  bubbleType: 'permission' | 'waiting' | null;
-  /** Countdown timer for bubble (waiting: 2→0, permission: unused) */
+  bubbleType: 'permission' | 'waiting' | 'tool' | null;
+  /** Text to display in tool bubble */
+  bubbleText: string | null;
+  /** Countdown timer for bubble (waiting: 2→0, tool: 3→0, permission: unused) */
   bubbleTimer: number;
   /** Timer to stay seated while inactive after seat reassignment (counts down to 0) */
   seatTimer: number;
@@ -196,4 +198,8 @@ export interface Character {
   inputTokens: number;
   /** Cumulative output tokens consumed */
   outputTokens: number;
+  /** Whether this is the buddy pet (not a real agent) */
+  isBuddy?: boolean;
+  /** Buddy chat cooldown timer (internal) */
+  _buddyChatTimer?: number;
 }

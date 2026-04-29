@@ -1,79 +1,47 @@
 /**
  * LegnaCode Office — CLI Event Emitter
  *
- * Reads ~/.legna-office/server.json to discover the local office server,
- * then pushes agent events (tool calls, conversation messages) via HTTP POST.
- *
- * Auto-detect + configurable: checks server.json on startup,
- * respects settings.legnaOffice.enabled.
+ * Pushes agent events to the Office plugin on fixed port 19960.
+ * No discovery file, no caching, no bullshit.
  */
 
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
 import { homedir } from 'os';
+import { join } from 'path';
 
-interface ServerConfig {
-  port: number;
-  pid: number;
-  token: string;
-  startedAt: number;
-}
+const PORT = 19960;
+const TOKEN_PATH = join(homedir(), '.legna-office', 'server.json');
 
-let _serverConfig: ServerConfig | null = null;
-let _enabled: boolean | null = null;
+let _token: string | null = null;
 let _sessionId: string | null = null;
 
-const DISCOVERY_PATH = join(homedir(), '.legna-office', 'server.json');
-
-function loadServerConfig(): ServerConfig | null {
+function getToken(): string | null {
+  if (_token) return _token;
   try {
-    if (!existsSync(DISCOVERY_PATH)) return null;
-    const raw = JSON.parse(readFileSync(DISCOVERY_PATH, 'utf-8'));
-    if (!raw.port || !raw.token) return null;
-    // Check if the server process is still alive
-    try { process.kill(raw.pid, 0); } catch { return null; }
-    return raw as ServerConfig;
+    const { readFileSync, existsSync } = require('fs');
+    if (!existsSync(TOKEN_PATH)) return null;
+    const raw = JSON.parse(readFileSync(TOKEN_PATH, 'utf-8'));
+    _token = raw.token ?? null;
+    return _token;
   } catch {
     return null;
   }
 }
 
-function getConfig(): ServerConfig | null {
-  if (_serverConfig === null) {
-    _serverConfig = loadServerConfig();
-  }
-  return _serverConfig;
-}
-
-function isEnabled(): boolean {
-  if (_enabled !== null) return _enabled;
+async function post(path: string, body: Record<string, unknown>): Promise<void> {
+  const token = getToken();
   try {
-    const { getInitialSettings } = require('../utils/settings/settings.js');
-    const settings = getInitialSettings?.() ?? {};
-    const office = settings.legnaOffice;
-    if (office && typeof office === 'object') {
-      if (office.enabled === false) { _enabled = false; return false; }
-    }
-  } catch {}
-  _enabled = getConfig() !== null;
-  return _enabled;
-}
-
-async function postEvent(path: string, body: Record<string, unknown>): Promise<void> {
-  const config = getConfig();
-  if (!config) return;
-  try {
-    await fetch(`http://127.0.0.1:${config.port}${path}`, {
+    await fetch(`http://127.0.0.1:${PORT}${path}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${config.token}`,
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(3000),
+      signal: AbortSignal.timeout(2000),
     });
   } catch {
-    // Non-critical — don't break CLI flow
+    // Token might have changed after plugin reload
+    _token = null;
   }
 }
 
@@ -84,8 +52,8 @@ export function setSessionId(id: string): void {
 }
 
 export function emitOfficeEvent(hookName: string, data: Record<string, unknown> = {}): void {
-  if (!isEnabled() || !_sessionId) return;
-  postEvent('/api/hooks/legna', {
+  if (!_sessionId) return;
+  post('/api/hooks/legna', {
     session_id: _sessionId,
     hook_name: hookName,
     ...data,
@@ -93,8 +61,8 @@ export function emitOfficeEvent(hookName: string, data: Record<string, unknown> 
 }
 
 export function emitConversation(role: 'user' | 'assistant' | 'tool', content: string, meta?: Record<string, unknown>): void {
-  if (!isEnabled() || !_sessionId) return;
-  postEvent('/api/conversation', {
+  if (!_sessionId) return;
+  post('/api/conversation', {
     session_id: _sessionId,
     role,
     content,
@@ -103,8 +71,7 @@ export function emitConversation(role: 'user' | 'assistant' | 'tool', content: s
   });
 }
 
-/** Reset cached state (e.g., when settings change) */
+/** Reset cached token (e.g., after plugin reload) */
 export function resetOfficeEmitter(): void {
-  _serverConfig = null;
-  _enabled = null;
+  _token = null;
 }

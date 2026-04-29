@@ -20,14 +20,17 @@ import { cancelPermissionTimer, cancelWaitingTimer } from './timerManager.js';
 import type { AgentState, PersistedAgent } from './types.js';
 
 export function getProjectDirPath(cwd?: string): string {
-  // Fall back to home directory when no workspace folder is open.
-  // This is the common case on Linux/macOS when VS Code is launched without a folder
-  // (e.g. `code` with no arguments). Claude Code writes JSONL files to
-  // ~/.claude/projects/<hash>/ where <hash> is derived from the process cwd, so we
-  // must use the same directory as the terminal's working directory.
   const workspacePath = cwd || vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || os.homedir();
+
+  // Primary: project-local .legna/sessions/ (v1.3.0+)
+  const localSessionsDir = path.join(workspacePath, '.legna', 'sessions');
+  if (fs.existsSync(localSessionsDir)) {
+    console.log(`[LegnaCode Office] Using project-local sessions: ${localSessionsDir}`);
+    return localSessionsDir;
+  }
+
+  // Fallback: global ~/.legna/projects/<hash>/ or ~/.claude/projects/<hash>/
   const dirName = workspacePath.replace(/[^a-zA-Z0-9-]/g, '-');
-  // Try .legna first, fall back to .claude for backward compat
   let projectDir = path.join(os.homedir(), '.legna', 'projects', dirName);
   if (!fs.existsSync(projectDir)) {
     const legacyDir = path.join(os.homedir(), '.claude', 'projects', dirName);
@@ -41,7 +44,6 @@ export function getProjectDirPath(cwd?: string): string {
     try {
       if (fs.existsSync(projectsRoot)) {
         const candidates = fs.readdirSync(projectsRoot);
-        // Try case-insensitive match (handles Windows drive letter casing)
         const lowerDirName = dirName.toLowerCase();
         const match = candidates.find((c) => c.toLowerCase() === lowerDirName);
         if (match && match !== dirName) {
@@ -104,8 +106,13 @@ export async function launchNewTerminal(
   const projectDir = getProjectDirPath(cwd);
 
   // Pre-register expected JSONL file so project scan won't treat it as a /clear file
-  const expectedFile = path.join(projectDir, `${sessionId}.jsonl`);
-  knownJsonlFiles.add(expectedFile);
+  // CLI writes to project-local path: <cwd>/.legna/sessions/<sessionId>.jsonl
+  const localExpectedFile = path.join(cwd, '.legna', 'sessions', `${sessionId}.jsonl`);
+  const globalExpectedFile = path.join(projectDir, `${sessionId}.jsonl`);
+  knownJsonlFiles.add(localExpectedFile);
+  knownJsonlFiles.add(globalExpectedFile);
+  // Use local path as primary (matches CLI behavior since v1.3.0)
+  const expectedFile = localExpectedFile;
 
   // Create agent immediately (before JSONL file exists)
   const id = nextAgentIdRef.current++;
@@ -156,6 +163,9 @@ export async function launchNewTerminal(
     permissionTimers,
     webview,
     persistAgents,
+    undefined,
+    undefined,
+    cwd,
   );
 
   // Poll for the specific JSONL file to appear
@@ -184,20 +194,25 @@ export async function launchNewTerminal(
         readNewLines(id, agents, waitingTimers, permissionTimers, webview);
       } else if (pollCount === 10) {
         // After 10s of polling, warn with path details to help diagnose path encoding mismatches
-        const dirExists = fs.existsSync(projectDir);
+        // Check both project-local and global dirs
+        const localDir = path.join(cwd, '.legna', 'sessions');
+        const dirsToCheck = [localDir, projectDir].filter((d, i, arr) => arr.indexOf(d) === i);
         let dirContents = '';
-        if (dirExists) {
-          try {
-            const files = fs.readdirSync(projectDir).filter((f) => f.endsWith('.jsonl'));
-            dirContents =
-              files.length > 0
-                ? `Dir has ${files.length} JSONL file(s): ${files.slice(0, 3).join(', ')}${files.length > 3 ? '...' : ''}`
-                : 'Dir exists but has no JSONL files';
-          } catch {
-            dirContents = 'Dir exists but unreadable';
+        for (const dir of dirsToCheck) {
+          const dirExists = fs.existsSync(dir);
+          if (dirExists) {
+            try {
+              const files = fs.readdirSync(dir).filter((f) => f.endsWith('.jsonl'));
+              dirContents +=
+                files.length > 0
+                  ? `${dir}: ${files.length} JSONL file(s): ${files.slice(0, 3).join(', ')}${files.length > 3 ? '...' : ''}. `
+                  : `${dir}: exists but no JSONL files. `;
+            } catch {
+              dirContents += `${dir}: exists but unreadable. `;
+            }
+          } else {
+            dirContents += `${dir}: does not exist. `;
           }
-        } else {
-          dirContents = 'Dir does not exist';
         }
         console.warn(
           `[LegnaCode Office] Terminal: Agent ${id} - JSONL file not found after 10s. ` +
@@ -205,18 +220,27 @@ export async function launchNewTerminal(
         );
       } else if (pollCount > 10) {
         // Possible /resume: terminal started a different session than expected.
-        // Check every tick for a file modified after the agent was created.
+        // Check both project-local and global dirs for recently modified files.
         try {
+          const localDir = path.join(cwd, '.legna', 'sessions');
+          const dirsToScan = [localDir, projectDir].filter((d, i, arr) => arr.indexOf(d) === i);
           const trackedFiles = new Set([...agents.values()].map((a) => path.resolve(a.jsonlFile)));
-          const candidates = fs
-            .readdirSync(projectDir)
-            .filter((f) => f.endsWith('.jsonl'))
-            .map((f) => {
-              const full = path.join(projectDir, f);
-              return { file: full, mtime: fs.statSync(full).mtimeMs };
-            })
-            .filter((c) => !trackedFiles.has(path.resolve(c.file)) && c.mtime > createdAt)
-            .sort((a, b) => b.mtime - a.mtime); // newest first
+          const candidates: Array<{ file: string; mtime: number }> = [];
+
+          for (const dir of dirsToScan) {
+            try {
+              const files = fs
+                .readdirSync(dir)
+                .filter((f) => f.endsWith('.jsonl'))
+                .map((f) => {
+                  const full = path.join(dir, f);
+                  return { file: full, mtime: fs.statSync(full).mtimeMs };
+                })
+                .filter((c) => !trackedFiles.has(path.resolve(c.file)) && c.mtime > createdAt);
+              candidates.push(...files);
+            } catch { /* dir may not exist */ }
+          }
+          candidates.sort((a, b) => b.mtime - a.mtime);
 
           if (candidates.length > 0) {
             console.log(

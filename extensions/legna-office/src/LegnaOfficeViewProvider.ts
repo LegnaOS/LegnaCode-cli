@@ -9,7 +9,8 @@ import {
   installHooks,
   uninstallHooks,
 } from '../server/src/providers/hook/claude/claudeHookInstaller.js';
-import { claudeProvider, copyHookScript } from '../server/src/providers/index.js';
+import { ensureSettingsEnabled } from '../server/src/providers/hook/legna/legnaHookInstaller.js';
+import { claudeProvider, copyHookScript, legnaProvider } from '../server/src/providers/index.js';
 import { LegnaOfficeServer } from '../server/src/server.js';
 import {
   getProjectDirPath,
@@ -129,25 +130,24 @@ export class LegnaOfficeViewProvider implements vscode.WebviewViewProvider {
       this.waitingTimers,
       this.permissionTimers,
       () => this.webview,
-      claudeProvider,
+      legnaProvider,
       this.watchAllSessions,
     );
 
-    // Register Claude's team provider (if present on the hook provider) with the file
+    // Register Legna's team provider (if present) with the file
     // watcher module + transcriptParser, plus the teammate removal callback.
-    if (claudeProvider.team) {
-      setTeamProvider(claudeProvider.team);
+    // Fall back to Claude's team provider for backward compat.
+    const teamProv = legnaProvider.team ?? claudeProvider.team;
+    if (teamProv) {
+      setTeamProvider(teamProv);
     }
-    setHookProvider(claudeProvider);
+    setHookProvider(legnaProvider);
     setTeammateRemovalCallback((id) => this.removeTeammate(id, 'team-config'));
 
     this.hookEventHandler.setLifecycleCallbacks({
       onExternalSessionDetected: (sessionId, transcriptPath, cwd) => {
-        // Workspace filtering: only adopt if in a tracked project dir or Watch All Sessions is ON
-        const projectDir = transcriptPath ? path.dirname(transcriptPath) : cwd;
-        if (!isTrackedProjectDir(projectDir) && !this.watchAllSessions.current) {
-          return; // Not our workspace and Watch All is OFF, ignore
-        }
+        // Accept all external sessions — don't filter by tracked project dir.
+        // LegnaCode CLI pushes events natively, any session on this machine is ours.
         adoptExternalSessionFromHook(
           sessionId,
           transcriptPath,
@@ -258,6 +258,7 @@ export class LegnaOfficeViewProvider implements vscode.WebviewViewProvider {
         if (hooksEnabled) {
           installHooks();
           copyHookScript(this.context.extensionPath);
+          ensureSettingsEnabled();
         }
         console.log(`[LegnaCode Office] Server: ready on port ${config.port}`);
       })
@@ -550,6 +551,7 @@ export class LegnaOfficeViewProvider implements vscode.WebviewViewProvider {
           this.persistAgents,
           (agent) => this.registerAgentHook(agent),
           this.hooksEnabled,
+          workspaceRoot,
         );
 
         // Start external session scanning (detects VS Code extension panel sessions)
@@ -594,6 +596,7 @@ export class LegnaOfficeViewProvider implements vscode.WebviewViewProvider {
                   this.persistAgents,
                   undefined,
                   this.hooksEnabled,
+                  folder.uri.fsPath,
                 );
               }
             }

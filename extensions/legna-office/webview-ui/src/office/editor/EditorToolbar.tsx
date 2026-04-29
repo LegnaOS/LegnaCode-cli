@@ -114,33 +114,33 @@ export function EditorToolbar({
           variant={isFurnitureActive ? 'active' : 'default'}
           size="md"
           onClick={() => onToolChange(EditTool.FURNITURE_PLACE)}
-          title="Place furniture"
+          title="放置家具 Place furniture"
         >
-          Furniture
+          家具 Furniture
         </Button>
         <Button
           variant={isFloorActive ? 'active' : 'default'}
           size="md"
           onClick={() => onToolChange(EditTool.TILE_PAINT)}
-          title="Paint floor tiles"
+          title="绘制地板 Paint floor tiles"
         >
-          Floor
+          地板 Floor
         </Button>
         <Button
           variant={isWallActive ? 'active' : 'default'}
           size="md"
           onClick={() => onToolChange(EditTool.WALL_PAINT)}
-          title="Paint walls (click to toggle)"
+          title="绘制墙壁 Paint walls"
         >
-          Wall
+          墙壁 Wall
         </Button>
         <Button
           variant={isEraseActive ? 'active' : 'default'}
           size="md"
           onClick={() => onToolChange(EditTool.ERASE)}
-          title="Erase tiles to void"
+          title="擦除 Erase tiles to void"
         >
-          Erase
+          擦除 Erase
         </Button>
       </div>
 
@@ -304,18 +304,18 @@ export function EditorToolbar({
               variant={showFurnitureColor ? 'active' : 'default'}
               size="sm"
               onClick={() => setShowFurnitureColor((v) => !v)}
-              title="Adjust selected furniture color"
+              title="调整家具颜色 Adjust selected furniture color"
             >
-              Color
+              颜色 Color
             </Button>
             {selectedFurnitureColor && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => onSelectedFurnitureColorChange(null)}
-                title="Remove color (restore original)"
+                title="移除颜色(恢复原色) Remove color"
               >
-                Clear
+                清除 Clear
               </Button>
             )}
           </div>

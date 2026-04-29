@@ -151,6 +151,44 @@ export function processTranscriptLine(
     // Claude Code may change the JSONL structure across versions
     const assistantContent = record.message?.content ?? record.content;
 
+    // ── Conversation message extraction: push text to webview sidebar ──
+    if (record.type === 'user') {
+      const userContent = record.message?.content ?? record.content;
+      let text = '';
+      if (typeof userContent === 'string') {
+        text = userContent;
+      } else if (Array.isArray(userContent)) {
+        text = (userContent as Array<{ type: string; text?: string }>)
+          .filter((b) => b.type === 'text' && b.text)
+          .map((b) => b.text)
+          .join('\n');
+      }
+      if (text.trim()) {
+        webview?.postMessage({
+          type: 'conversationMessage',
+          id: agentId,
+          role: 'user',
+          content: text.slice(0, 500),
+          timestamp: Date.now(),
+        });
+      }
+    } else if (record.type === 'assistant' && Array.isArray(assistantContent)) {
+      // Extract assistant text blocks for conversation display
+      const textBlocks = (assistantContent as Array<{ type: string; text?: string }>)
+        .filter((b) => b.type === 'text' && b.text)
+        .map((b) => b.text)
+        .join('\n');
+      if (textBlocks.trim()) {
+        webview?.postMessage({
+          type: 'conversationMessage',
+          id: agentId,
+          role: 'assistant',
+          content: textBlocks.slice(0, 500),
+          timestamp: Date.now(),
+        });
+      }
+    }
+
     if (record.type === 'assistant' && Array.isArray(assistantContent)) {
       const blocks = assistantContent as Array<{
         type: string;

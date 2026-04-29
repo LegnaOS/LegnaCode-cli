@@ -4,6 +4,15 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
+## [2.0.7] - 2026-04-30
+
+### Fixes
+
+- **DeepSeek reasoning_content Multi-Turn 400 Fix** — DeepSeek's OpenAI-compatible endpoint requires `reasoning_content` to be passed back in multi-turn conversations. Three fixes:
+  1. Removed `stripReasoningContent()` from DeepSeek adapter — the field must survive for the OpenAI bridge to reconstruct it; Anthropic SDK ignores unknown fields so both paths are safe.
+  2. `convertAnthropicToOpenAI()` now preserves `reasoning_content` on string-content assistant messages (session resume, prefill scenarios).
+  3. Empty thinking blocks now correctly produce `reasoning_content: ""` instead of being silently dropped.
+
 ## [2.0.5] - 2026-04-27
 
 ### Features

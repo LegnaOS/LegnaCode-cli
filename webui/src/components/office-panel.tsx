@@ -63,15 +63,32 @@ export function OfficePanel() {
     reconnectTimer.current = setTimeout(() => doConnect(), delay);
   }, []);
 
-  const doConnect = useCallback(() => {
+  const doConnect = useCallback(async () => {
     if (wsRef.current) return;
-    const port = 3457;
-    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
     setConn('connecting');
+
+    // Discover Office server port via Admin API
+    let port: number;
+    try {
+      const res = await fetch('/api/office-port');
+      const info = await res.json();
+      if (!info.running || !info.port) {
+        setConn('disconnected');
+        scheduleReconnect();
+        return;
+      }
+      port = info.port;
+    } catch {
+      setConn('disconnected');
+      scheduleReconnect();
+      return;
+    }
+
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
 
     ws.onopen = () => {
       setConn('connected');
-      retriesRef.current = 0; // Reset on success
+      retriesRef.current = 0;
     };
     ws.onclose = () => {
       setConn('disconnected');

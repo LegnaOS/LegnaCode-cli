@@ -97,7 +97,7 @@ function buildLaunchCommand(
   sessionId: string,
   cwd: string,
 ): { command: string; args: string[]; env?: Record<string, string> } {
-  return { command: 'claude', args: ['--session-id', sessionId], env: { PWD: cwd } };
+  return { command: 'legna', args: ['--session-id', sessionId], env: { PWD: cwd } };
 }
 
 // ── normalizeHookEvent: the single Claude-specific normalization boundary ──
