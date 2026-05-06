@@ -4,6 +4,15 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
+## [2.1.1] - 2026-05-06
+
+### Features
+
+- **DeepSeek Auto Reasoning** — Adaptive thinking effort selection per-turn based on message content. Debug/error messages get max reasoning; search/lookup gets minimal; subagents always use low. Inspired by DeepSeek-TUI.
+- **DeepSeek Precise Pricing** — Accurate cost tracking for DeepSeek V4 Flash ($0.014/$0.028 per Mtok) and Pro ($0.055/$0.22 per Mtok) instead of falling back to Claude pricing.
+- **DeepSeek Model Aliases** — Support legacy model names (deepseek-r1, deepseek-v3, deepseek-v3.2, deepseek-chat, deepseek-reasoner) with automatic normalization to canonical V4 IDs.
+- **DeepSeek Tool Name Encoding** — Encode MCP tool names containing illegal characters (`/`, `.`, `:`) for DeepSeek API compatibility, decode on response.
+
 ## [2.1.0] - 2026-04-30
 
 ### Features

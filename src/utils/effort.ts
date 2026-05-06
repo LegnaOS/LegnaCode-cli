@@ -29,6 +29,10 @@ export function modelSupportsEffort(model: string): boolean {
   if (supported3P !== undefined) {
     return supported3P
   }
+  // DeepSeek Anthropic endpoint supports output_config.effort
+  if (m.startsWith('deepseek-') || m.includes('deepseek')) {
+    return true
+  }
   // Supported by a subset of Claude 4 models
   if (m.includes('opus-4-6') || m.includes('sonnet-4-6')) {
     return true
@@ -56,6 +60,10 @@ export function modelSupportsMaxEffort(model: string): boolean {
     return supported3P
   }
   if (model.toLowerCase().includes('opus-4-6')) {
+    return true
+  }
+  // DeepSeek supports all effort levels including max
+  if (model.toLowerCase().startsWith('deepseek-') || model.toLowerCase().includes('deepseek')) {
     return true
   }
   if (process.env.USER_TYPE === 'ant' && resolveAntModel(model)) {

@@ -68,6 +68,7 @@ import {
   getSonnet1mExpTreatmentEnabled,
 } from '../../utils/context.js'
 import { resolveAppliedEffort } from '../../utils/effort.js'
+import { selectDeepSeekReasoning, isDeepSeekReasoningModel } from '../../utils/model/deepseekAutoReasoning.js'
 import { isEnvTruthy } from '../../utils/envUtils.js'
 import { errorMessage } from '../../utils/errors.js'
 import { computeFingerprintFromMessages } from '../../utils/fingerprint.js'
@@ -1476,6 +1477,21 @@ async function* queryModel(
   }
 
   const effort = resolveAppliedEffort(options.model, options.effortValue)
+    // DeepSeek auto reasoning: when no explicit effort is set and model is DeepSeek,
+    // adaptively select reasoning effort based on message content.
+    // Inspired by DeepSeek-TUI's auto_reasoning.rs.
+    ?? (isDeepSeekReasoningModel(options.model) ? (() => {
+      const isSubagent = options.querySource.startsWith('agent:') ||
+        options.querySource === 'hook_agent' ||
+        options.querySource === 'verification_agent'
+      const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
+      const lastText = lastUserMsg
+        ? (Array.isArray(lastUserMsg.content)
+          ? lastUserMsg.content.filter((b: any) => b.type === 'text').map((b: any) => b.text).join(' ')
+          : String(lastUserMsg.content ?? ''))
+        : ''
+      return selectDeepSeekReasoning(isSubagent, lastText)
+    })() : undefined)
 
   if (feature('PROMPT_CACHE_BREAK_DETECTION')) {
     // Exclude defer_loading tools from the hash -- the API strips them from the

@@ -86,6 +86,26 @@ export const COST_HAIKU_45 = {
   webSearchRequests: 0.01,
 } as const satisfies ModelCosts
 
+// DeepSeek V4 Flash: ¥0.1/¥0.2 per Mtok (≈ $0.014/$0.028 USD)
+// Cache read: ¥0.01/Mtok, cache write: ¥0.1/Mtok
+export const COST_DEEPSEEK_FLASH = {
+  inputTokens: 0.014,
+  outputTokens: 0.028,
+  promptCacheWriteTokens: 0.014,
+  promptCacheReadTokens: 0.0014,
+  webSearchRequests: 0,
+} as const satisfies ModelCosts
+
+// DeepSeek V4 Pro: ¥0.4/¥1.6 per Mtok (≈ $0.055/$0.22 USD)
+// Cache read: ¥0.04/Mtok, cache write: ¥0.4/Mtok
+export const COST_DEEPSEEK_PRO = {
+  inputTokens: 0.055,
+  outputTokens: 0.22,
+  promptCacheWriteTokens: 0.055,
+  promptCacheReadTokens: 0.0055,
+  webSearchRequests: 0,
+} as const satisfies ModelCosts
+
 const DEFAULT_UNKNOWN_MODEL_COST = COST_TIER_5_25
 
 /**
@@ -154,6 +174,15 @@ export function getModelCosts(model: string, usage: Usage): ModelCosts {
 
   const costs = MODEL_COSTS[shortName]
   if (!costs) {
+    // DeepSeek models — match before falling back to unknown
+    const m = model.toLowerCase()
+    if (m.includes('deepseek')) {
+      if (m.includes('pro') || m.includes('v4-pro')) {
+        return COST_DEEPSEEK_PRO
+      }
+      // flash, chat, reasoner, r1, v3 — all map to flash pricing
+      return COST_DEEPSEEK_FLASH
+    }
     trackUnknownModelCost(model, shortName)
     return (
       MODEL_COSTS[getCanonicalName(getDefaultMainLoopModelSetting())] ??

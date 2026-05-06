@@ -2,6 +2,15 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
+## [2.1.1] - 2026-05-06
+
+### 新功能
+
+- **DeepSeek 自适应推理** — 根据消息内容自动选择 thinking effort。debug/error 消息使用 max；search/lookup 使用 low；子代理始终 low。灵感来自 DeepSeek-TUI。
+- **DeepSeek 精确定价** — V4 Flash ($0.014/$0.028/Mtok) 和 Pro ($0.055/$0.22/Mtok) 的真实费用追踪，不再回退到 Claude 定价。
+- **DeepSeek 模型别名** — 支持旧模型名（deepseek-r1, deepseek-v3, deepseek-v3.2, deepseek-chat, deepseek-reasoner）自动规范化为 V4 正式 ID。
+- **DeepSeek 工具名编码** — 对含非法字符（`/`, `.`, `:`）的 MCP 工具名进行编码，确保 DeepSeek API 兼容性。
+
 ## [2.1.0] - 2026-04-30
 
 ### 新功能
