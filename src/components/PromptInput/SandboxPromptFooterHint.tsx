@@ -17,6 +17,7 @@ export function SandboxPromptFooterHint() {
         return;
       }
       const store = SandboxManager.getSandboxViolationStore();
+      if (!store?.subscribe) return;
       let lastCount = store.getTotalCount();
       const unsubscribe = store.subscribe(() => {
         const currentCount = store.getTotalCount();

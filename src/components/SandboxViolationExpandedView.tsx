@@ -32,7 +32,9 @@ export function SandboxViolationExpandedView() {
   let t2;
   if ($[1] === Symbol.for("react.memo_cache_sentinel")) {
     t1 = () => {
+      if (!SandboxManager.isSandboxingEnabled()) return;
       const store = SandboxManager.getSandboxViolationStore();
+      if (!store?.subscribe) return;
       const unsubscribe = store.subscribe(allViolations => {
         setViolations(allViolations.slice(-10));
         setTotalCount(store.getTotalCount());
