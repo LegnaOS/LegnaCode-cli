@@ -2,6 +2,12 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
+## [2.1.2] - 2026-05-07
+
+### 修复
+
+- **sandbox 未启用时 ctrl+o 崩溃** — `SandboxViolationExpandedView` 和 `SandboxPromptFooterHint` 在 sandbox 未启用时跳过 store 订阅，修复 `store.subscribe is not a function` 崩溃。
+
 ## [2.1.1] - 2026-05-06
 
 ### 新功能

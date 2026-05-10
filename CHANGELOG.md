@@ -4,6 +4,12 @@
 
 All notable changes to LegnaCode CLI will be documented in this file.
 
+## [2.1.2] - 2026-05-07
+
+### Fixes
+
+- **ctrl+o crash when sandbox disabled** — `SandboxViolationExpandedView` and `SandboxPromptFooterHint` now skip store subscription entirely when sandbox is not enabled, preventing `store.subscribe is not a function` crash on transcript toggle.
+
 ## [2.1.1] - 2026-05-06
 
 ### Features
